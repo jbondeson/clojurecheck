@@ -36,20 +36,14 @@
     (print l)
     (newline)))
 
-(defn- print-result [ok?]
-  (if ok?
+(defn ok? [t & desc]
+  (if t
     (print "ok ")
     (print "not ok "))
   (dosync
     (print @counter)
-    (commute counter + 1)))
-
-(defn ok
-  ([ok?]
-    (print-result ok?)
-    (newline))
-  ([ok? desc]
-    (print-result ok?)
+    (commute counter + 1))
+  (when desc
     (print " - ")
-    (print desc)
-    (newline)))
+    (print (first desc)))
+  (newline))
