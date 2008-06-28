@@ -21,42 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-in="$0.in"
-out="$0.out"
-exp="$0.exp"
-
-counter=1
-
-print_result() {
-	if [ $1 -ne 0 ]; then
-		printf "not "
-	fi
-	printf "ok %d - %s\n" $counter $2
-	counter=`expr $counter + 1`
-}
-
-try() {
-	cat >$in <<EOF
-(load-file "tap.clj")
-(clojure/refer 'tap)
-$1
-EOF
-
-	cat >$exp <<EOF
-$2
-EOF
-
-	java clojure.lang.Script $in >$out
-	diff -u $exp $out
-	cmp -s $exp $out
-	print_result $? $3
-}
-
-cleanup() {
-	rm -f $in $out $exp
-}
-
-trap cleanup 2 3 5 6 9 15
+. t/testlib.sh
 
 echo 1..4
 

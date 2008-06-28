@@ -21,20 +21,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-. t/testlib.sh
+in="$0.in"
+out="$0.out"
+exp="$0.exp"
 
-echo 1..4
+counter=1
 
-try '(like? (.concat "foo" "bar") #"o+b")' "ok 1" "true w/o description"
-try '(like? (.concat "foo" "bar") #"xx")' 'not ok 1
-# Expected: (.concat "foo" "bar")
-# to match: xx' "false w/o description"
-try '(like? (.concat "foo" "bar") #"o+b" "success")' "ok 1 - success" \
-	"true w/ description"
-try '(like? (.concat "foo" "bar") #"xx" "failure")' 'not ok 1 - failure
-# Expected: (.concat "foo" "bar")
-# to match: xx' "false w/ description"
+print_result() {
+	if [ $1 -ne 0 ]; then
+		printf "not "
+	fi
+	printf "ok %d - %s\n" $counter "$2"
+	counter=`expr $counter + 1`
+}
 
-cleanup
+try() {
+	cat >$in <<EOF
+(load-file "tap.clj")
+(clojure/refer 'tap)
+$1
+EOF
+
+	cat >$exp <<EOF
+$2
+EOF
+
+	java clojure.lang.Script $in >$out
+	cmp -s $exp $out
+	print_result $? "$3"
+}
+
+cleanup() {
+	rm -f $in $out $exp
+}
+
+trap cleanup 2 3 5 6 9 15
 
 # vim:ft=sh:
