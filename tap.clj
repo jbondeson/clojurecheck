@@ -88,3 +88,11 @@
              (fn [e a r]
                 (diag (.concat "Expected: " a))
                 (diag (.concat "to match: " e)))))
+
+(defmacro unlike? [actual exp & desc]
+  (ok-driver actual exp (first desc)
+             (fn [e a] (nil? (re-find e a)))
+             (fn [e a r]
+                (diag (.concat "Expected:     " a))
+                (diag (.concat "not to match: " e))
+                (diag (.concat "string was:   " r)))))
