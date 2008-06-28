@@ -48,43 +48,43 @@
     (print (first desc)))
   (newline))
 
-(defmacro is? [actual exp & desc]
-  (let [tmp_e (gensym "is__")
-        tmp_a (gensym "is__")
-        tmp_r (gensym "is__")
-        tmp_es (gensym "is__")
-        tmp_as (gensym "is__")
-        tmp_rs (gensym "is__")]
+(defn- ok-driver [actual exp desc pred diagnose]
+  (let [tmp_e (gensym "tap__")
+        tmp_a (gensym "tap__")
+        tmp_r (gensym "tap__")
+        tmp_es (gensym "tap__")
+        tmp_as (gensym "tap__")
+        tmp_rs (gensym "tap__")]
     `(let [~tmp_e ~exp
            ~tmp_a ~actual
-           ~tmp_r (= ~tmp_e ~tmp_a)]
-       (if (nil? ~(first desc))
+           ~tmp_r (~pred ~tmp_e ~tmp_a)]
+       (if (nil? ~desc)
          (ok? ~tmp_r)
-         (ok? ~tmp_r ~(first desc)))
+         (ok? ~tmp_r ~desc))
        (when-not ~tmp_r
-         (let [~tmp_es (print-str ~tmp_e)
-               ~tmp_as (print-str (quote ~actual))
-               ~tmp_rs (print-str ~tmp_a)]
-           (diag (.concat "Expected: " ~tmp_as))
-           (diag (.concat "to be:    " ~tmp_es))
-           (diag (.concat "but was:  " ~tmp_rs)))))))
+         (let [~tmp_es (pr-str ~tmp_e)
+               ~tmp_as (pr-str (quote ~actual))
+               ~tmp_rs (pr-str ~tmp_a)]
+           (~diagnose ~tmp_es ~tmp_as ~tmp_rs))))))
+
+(defmacro is? [actual exp & desc]
+  (ok-driver actual exp (first desc)
+             #(= %1 %2)
+             (fn [e a r]
+               (diag (.concat "Expected: " a))
+               (diag (.concat "to be:    " e))
+               (diag (.concat "but was:  " r)))))
 
 (defmacro isnt? [actual exp & desc]
-  (let [tmp_e (gensym "is__")
-        tmp_a (gensym "is__")
-        tmp_r (gensym "is__")
-        tmp_es (gensym "is__")
-        tmp_as (gensym "is__")
-        tmp_rs (gensym "is__")]
-    `(let [~tmp_e ~exp
-           ~tmp_a ~actual
-           ~tmp_r (not= ~tmp_e ~tmp_a)]
-       (if (nil? ~(first desc))
-         (ok? ~tmp_r)
-         (ok? ~tmp_r ~(first desc)))
-       (when-not ~tmp_r
-         (let [~tmp_es (print-str ~tmp_e)
-               ~tmp_as (print-str (quote ~actual))
-               ~tmp_rs (print-str ~tmp_a)]
-           (diag (.concat "Expected:  " ~tmp_as))
-           (diag (.concat "not to be: " ~tmp_es)))))))
+  (ok-driver actual exp (first desc)
+             #(not= %1 %2)
+             (fn [e a r]
+               (diag (.concat "Expected:  " a))
+               (diag (.concat "not to be: " e)))))
+
+(defmacro like? [actual exp & desc]
+  (ok-driver actual exp (first desc)
+             (fn [e a] (not (nil? (re-find e a))))
+             (fn [e a r]
+                (diag (.concat "Expected: " a))
+                (diag (.concat "to match: " e)))))
