@@ -68,3 +68,23 @@
            (diag (.concat "Expected: " ~tmp_as))
            (diag (.concat "to be:    " ~tmp_es))
            (diag (.concat "but was:  " ~tmp_rs)))))))
+
+(defmacro isnt? [actual exp & desc]
+  (let [tmp_e (gensym "is__")
+        tmp_a (gensym "is__")
+        tmp_r (gensym "is__")
+        tmp_es (gensym "is__")
+        tmp_as (gensym "is__")
+        tmp_rs (gensym "is__")]
+    `(let [~tmp_e ~exp
+           ~tmp_a ~actual
+           ~tmp_r (not= ~tmp_e ~tmp_a)]
+       (if (nil? ~(first desc))
+         (ok? ~tmp_r)
+         (ok? ~tmp_r ~(first desc)))
+       (when-not ~tmp_r
+         (let [~tmp_es (print-str ~tmp_e)
+               ~tmp_as (print-str (quote ~actual))
+               ~tmp_rs (print-str ~tmp_a)]
+           (diag (.concat "Expected:  " ~tmp_as))
+           (diag (.concat "not to be: " ~tmp_es)))))))
