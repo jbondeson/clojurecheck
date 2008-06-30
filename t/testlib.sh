@@ -40,6 +40,7 @@ try() {
 (load-file "tap.clj")
 (clojure/refer 'tap)
 $1
+(. java.lang.System (exit 0))
 EOF
 
 	cat >$exp <<EOF
