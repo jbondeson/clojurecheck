@@ -36,6 +36,15 @@
     (newline)
     (flush)))
 
+(defn bail-out [& msg]
+  (print "Bail out!")
+  (when-not (nil? msg)
+    (print " ")
+    (print (first msg)))
+  (newline)
+  (flush)
+  (.exit java.lang.System 1))
+
 (def mode :normal)
 (def skip-reason :none)
 
