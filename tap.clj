@@ -23,76 +23,140 @@
 (in-ns 'tap)
 (clojure/refer 'clojure)
 
-(def counter (ref 1))
-
 (defn plan [count]
   (print "1..")
   (print count)
-  (newline))
+  (newline)
+  (flush))
 
 (defn diag [msg]
   (doseq l (.split msg "\n")
     (print "# ")
     (print l)
-    (newline)))
+    (newline)
+    (flush)))
 
-(defn ok? [t & desc]
+(def mode :normal)
+(def skip-reason :none)
+
+(defn todo* [body]
+  (binding [mode :todo]
+    (body)))
+
+(defmacro todo [& body]
+  `(todo* (fn [] ~@body)))
+
+(defn skip* [reason body]
+  (binding [mode :skip
+            skip-reason reason]
+     (body)))
+
+(defmacro skip [reason & body]
+  `(skip* ~reason (fn [] ~@body)))
+
+(defn skip-if* [t reason body]
+  (if t
+    (skip* reason body)
+    (body)))
+
+(defmacro skip-if [t reason & body]
+  `(skip-if* ~t ~reason (fn [] ~@body)))
+
+(def test-agent (agent 1))
+
+(defn print-result [c m t desc]
   (if t
     (print "ok ")
     (print "not ok "))
-  (dosync
-    (print @counter)
-    (commute counter + 1))
-  (when desc
+  (print c)
+  (cond
+    (= m :todo) (print " # TODO")
+    (= m :skip) (print " # SKIP"))
+  (when-not (nil? desc)
     (print " - ")
-    (print (first desc)))
+    (print desc))
   (newline))
 
-(defn- ok-driver [actual exp desc pred diagnose]
-  (let [tmp_e (gensym "tap__")
-        tmp_a (gensym "tap__")
-        tmp_r (gensym "tap__")
-        tmp_es (gensym "tap__")
-        tmp_as (gensym "tap__")
-        tmp_rs (gensym "tap__")]
-    `(let [~tmp_e ~exp
-           ~tmp_a ~actual
-           ~tmp_r (~pred ~tmp_e ~tmp_a)]
-       (if (nil? ~desc)
-         (ok? ~tmp_r)
-         (ok? ~tmp_r ~desc))
-       (when-not ~tmp_r
-         (let [~tmp_es (pr-str ~tmp_e)
-               ~tmp_as (pr-str (quote ~actual))
-               ~tmp_rs (pr-str ~tmp_a)]
-           (~diagnose ~tmp_es ~tmp_as ~tmp_rs))))))
+(defmacro let-if [t b1 b2 & body]
+  `(if ~t
+     (let ~b1
+       ~@body)
+     (let ~b2
+       ~@body)))
+
+(defn test-driver [actual qactual exp desc pred diagnose]
+  (await
+    (send test-agent
+          (fn [c m sr]
+            (let-if (= m :skip)
+                    [e nil
+                     a nil
+                     r true
+                     d sr]
+                    [e (exp)
+                     a (actual)
+                     r (pred e a)
+                     d desc]
+              (print-result c m r d)
+              (when-not r
+                (let [es (pr-str e)
+                      as (pr-str qactual)
+                      rs (pr-str a)]
+                  (diagnose es as rs)))
+              (flush)
+              (+ c 1)))
+          mode
+          skip-reason)))
+
+(defmacro ok? [t & desc]
+  `(test-driver (fn [] ~t)
+                (quote ~t)
+                (fn [] nil)
+                ~(first desc)
+                (fn [e# a#] a#)
+                (fn [e# a# r#]
+                  (diag (.. "Expected: "
+                            (concat a#)
+                            (concat " to be true"))))))
 
 (defmacro is? [actual exp & desc]
-  (ok-driver actual exp (first desc)
-             #(= %1 %2)
-             (fn [e a r]
-               (diag (.concat "Expected: " a))
-               (diag (.concat "to be:    " e))
-               (diag (.concat "but was:  " r)))))
+  `(test-driver (fn [] ~actual)
+                (quote ~actual)
+                (fn [] ~exp)
+                ~(first desc)
+                (fn [e# a#] (= e# a#))
+                (fn [e# a# r#]
+                  (diag (.concat "Expected: " a#))
+                  (diag (.concat "to be:    " e#))
+                  (diag (.concat "but was:  " r#)))))
 
 (defmacro isnt? [actual exp & desc]
-  (ok-driver actual exp (first desc)
-             #(not= %1 %2)
-             (fn [e a r]
-               (diag (.concat "Expected:  " a))
-               (diag (.concat "not to be: " e)))))
+  `(test-driver (fn [] ~actual)
+                (quote ~actual)
+                (fn [] ~exp)
+                ~(first desc)
+                (fn [e# a#] (not= e# a#))
+                (fn [e# a# r#]
+                  (diag (.concat "Expected:  " a#))
+                  (diag (.concat "not to be: " e#)))))
 
 (defmacro like? [actual exp & desc]
-  (ok-driver actual exp (first desc)
-             (fn [e a] (not (nil? (re-find e a))))
-             (fn [e a r]
-                (diag (.concat "Expected: " a))
-                (diag (.concat "to match: " e)))))
+  `(test-driver (fn [] ~actual)
+                (quote ~actual)
+                (fn [] ~exp)
+                ~(first desc)
+                (fn [e# a#] (not (nil? (re-find e# a#))))
+                (fn [e# a# r#]
+                  (diag (.concat "Expected: " a#))
+                  (diag (.concat "to match: " e#)))))
 
 (defmacro unlike? [actual exp & desc]
-  (ok-driver actual exp (first desc)
-             (fn [e a] (nil? (re-find e a)))
-             (fn [e a r]
-                (diag (.concat "Expected:     " a))
-                (diag (.concat "not to match: " e))
-                (diag (.concat "string was:   " r)))))
+  `(test-driver (fn [] ~actual)
+                (quote ~actual)
+                (fn [] ~exp)
+                ~(first desc)
+                (fn [e# a#] (nil? (re-find e# a#)))
+                (fn [e# a# r#]
+                  (diag (.concat "Expected:     " a#))
+                  (diag (.concat "not to match: " e#))
+                  (diag (.concat "string was:   " r#)))))

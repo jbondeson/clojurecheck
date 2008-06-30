@@ -23,14 +23,22 @@
 
 . t/testlib.sh
 
-echo 1..4
+echo 1..6
 
-try "(ok? true)" "ok 1" "true w/o description"
-try "(ok? false)" "not ok 1
-# Expected: false to be true" "false w/o description"
-try "(ok? true \"success\")" "ok 1 - success" "true w/ description"
-try "(ok? false \"failure\")" "not ok 1 - failure
-# Expected: false to be true" "false w/ description"
+try '(skip "for test" (ok? (do (println "FAILED") true)))' \
+	"ok 1 # SKIP - for test" "true SKIP w/o description"
+try '(skip "for test" (ok? (do (println "FAILED") false)))' \
+	'ok 1 # SKIP - for test' "false SKIP w/o description"
+try '(skip "for test" (ok? (do (println "FAILED") true) "success"))' \
+	"ok 1 # SKIP - for test" "true SKIP w/ description"
+try '(skip "for test" (ok? (do (println "FAILED") false) "failure"))' \
+	'ok 1 # SKIP - for test' "false SKIP w/ description"
+
+try '(skip-if true "for test" (ok? (do (println "FAILED") false) "failure"))' \
+	'ok 1 # SKIP - for test' "true skip-if w/ description"
+try '(skip-if false "for test" (ok? (do (println "OK") true) "success"))' \
+	'OK
+ok 1 - success' "false skip-if w/ description"
 
 cleanup
 
