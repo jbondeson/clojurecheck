@@ -86,34 +86,27 @@
     (print desc))
   (newline))
 
-(defmacro let-if [t b1 b2 & body]
-  `(if ~t
-     (let ~b1
-       ~@body)
-     (let ~b2
-       ~@body)))
-
 (defn test-driver [actual qactual exp desc pred diagnose]
   (await
     (send test-agent
           (fn [c m sr]
-            (let-if (= m :skip)
-                    [e nil
-                     a nil
-                     r true
-                     d sr]
-                    [e (exp)
-                     a (actual)
-                     r (pred e a)
-                     d desc]
-              (print-result c m r d)
-              (when-not r
-                (let [es (pr-str e)
-                      as (pr-str qactual)
-                      rs (pr-str a)]
-                  (diagnose es as rs)))
-              (flush)
-              (+ c 1)))
+            (if (= m :skip)
+              (print-result c m true sr)
+              (try
+                (let [e (exp)
+                      a (actual)
+                      r (pred e a)]
+                  (print-result c m r desc)
+                  (when-not r
+                    (let [es (pr-str e)
+                          as (pr-str qactual)
+                          rs (pr-str a)]
+                      (diagnose es as rs))))
+                (catch Exception e
+                  (print-result c m false desc)
+                  (diag (str "Exception was thrown: " e)))))
+            (flush)
+            (+ c 1))
           mode
           skip-reason)))
 

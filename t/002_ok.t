@@ -23,7 +23,7 @@
 
 . t/testlib.sh
 
-echo 1..4
+echo 1..5
 
 try "(ok? true)" "ok 1" "true w/o description"
 try "(ok? false)" "not ok 1
@@ -31,6 +31,10 @@ try "(ok? false)" "not ok 1
 try "(ok? true \"success\")" "ok 1 - success" "true w/ description"
 try "(ok? false \"failure\")" "not ok 1 - failure
 # Expected: false to be true" "false w/ description"
+
+try '(ok? (throw (new Exception "exception")) "exception")' \
+'not ok 1 - exception
+# Exception was thrown: java.lang.Exception: exception' "exceptions are caught"
 
 cleanup
 
