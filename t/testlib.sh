@@ -37,8 +37,7 @@ print_result() {
 
 try() {
 	cat >$in <<EOF
-(load-file "tap.clj")
-(clojure/refer 'tap)
+(clojure-contrib.lib/use '(de.kotka tap))
 $1
 (. java.lang.System (exit 0))
 EOF
