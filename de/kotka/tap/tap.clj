@@ -20,8 +20,8 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/in-ns 'de.kotka.tap)
-(clojure/refer 'clojure)
+(clojure/ns de.kotka.tap
+  (:refer-clojure))
 
 (defn plan [count]
   (print "1..")

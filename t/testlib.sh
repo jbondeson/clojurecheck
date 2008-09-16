@@ -37,9 +37,11 @@ print_result() {
 
 try() {
 	cat >$in <<EOF
-(clojure-contrib.lib/use '(de.kotka tap))
+(clojure/ns de.kotka.tap.tests
+  (:refer-clojure)
+  (:use de.kotka.tap))
 $1
-(. java.lang.System (exit 0))
+(. java.lang.System exit 0)
 EOF
 
 	cat >$exp <<EOF
