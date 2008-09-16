@@ -162,3 +162,19 @@
                   (diag (.concat "Expected:     " a#))
                   (diag (.concat "not to match: " e#))
                   (diag (.concat "string was:   " r#)))))
+
+(defmacro throws? [exn body & desc]
+  `(test-driver (fn []
+                  (try
+                    (do
+                      ~body
+                      false)
+                    (catch ~exn e#
+                      true)))
+                (quote ~body)
+                (fn [] ~exn)
+                ~(first desc)
+                (fn [e# a#] a#)
+                (fn [e# a# r#]
+                  (diag (.concat "Expected: " a#))
+                  (diag (.concat "to throw: " e#)))))
