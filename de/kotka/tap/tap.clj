@@ -21,7 +21,8 @@
 ; THE SOFTWARE.
 
 (clojure/ns de.kotka.tap
-  (:refer-clojure))
+  (:refer-clojure)
+  (:use clojure.contrib.def))
 
 (defn plan [count]
   (print "1..")
@@ -45,19 +46,19 @@
   (flush)
   (.exit java.lang.System 1))
 
-(def mode :normal)
-(def skip-reason :none)
+(defvar- *mode*        :normal)
+(defvar- *skip-reason* :none)
 
 (defn todo* [body]
-  (binding [mode :todo]
+  (binding [*mode* :todo]
     (body)))
 
 (defmacro todo [& body]
   `(todo* (fn [] ~@body)))
 
 (defn skip* [reason body]
-  (binding [mode :skip
-            skip-reason reason]
+  (binding [*mode*        :skip
+            *skip-reason* reason]
      (body)))
 
 (defmacro skip [reason & body]
@@ -70,8 +71,6 @@
 
 (defmacro skip-if [t reason & body]
   `(skip-if* ~t ~reason (fn [] ~@body)))
-
-(def test-agent (agent 1))
 
 (defn print-result [c m t desc]
   (if t
@@ -86,29 +85,27 @@
     (print desc))
   (newline))
 
-(defn test-driver [actual qactual exp desc pred diagnose]
-  (await
-    (send test-agent
-          (fn [c m sr]
-            (if (= m :skip)
-              (print-result c m true sr)
-              (try
-                (let [e (exp)
-                      a (actual)
-                      r (pred e a)]
-                  (print-result c m r desc)
-                  (when-not r
-                    (let [es (pr-str e)
-                          as (pr-str qactual)
-                          rs (pr-str a)]
-                      (diagnose es as rs))))
-                (catch Exception e
-                  (print-result c m false desc)
-                  (diag (str "Exception was thrown: " e)))))
-            (flush)
-            (+ c 1))
-          mode
-          skip-reason)))
+(let [current-test (ref 1)]
+  (defn test-driver [actual qactual exp desc pred diagnose]
+    (let [r (ref nil)]
+      (if (= *mode* :skip)
+        (print-result @current-test *mode* true *skip-reason*)
+        (try
+          (let [e (exp)
+                a (actual)]
+            (let [rr (pred e a)] (dosync (ref-set r rr)))
+            (print-result @current-test *mode* @r desc)
+            (when-not @r
+              (let [es (pr-str e)
+                    as (pr-str qactual)
+                    rs (pr-str a)]
+                (diagnose es as rs))))
+          (catch Exception e
+            (print-result @current-test *mode* false desc)
+            (diag (str "Exception was thrown: " e)))))
+      (flush)
+      (dosync (commute current-test inc))
+      @r)))
 
 (defmacro ok? [t & desc]
   `(test-driver (fn [] ~t)
