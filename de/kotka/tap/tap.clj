@@ -83,29 +83,30 @@
   (when-not (nil? desc)
     (print " - ")
     (print desc))
-  (newline))
+  (newline)
+  (flush))
 
 (let [current-test (ref 1)]
   (defn test-driver [actual qactual exp desc pred diagnose]
-    (let [r (ref nil)]
-      (if (= *mode* :skip)
-        (print-result @current-test *mode* true *skip-reason*)
-        (try
-          (let [e (exp)
-                a (actual)]
-            (let [rr (pred e a)] (dosync (ref-set r rr)))
-            (print-result @current-test *mode* @r desc)
-            (when-not @r
-              (let [es (pr-str e)
-                    as (pr-str qactual)
-                    rs (pr-str a)]
-                (diagnose es as rs))))
-          (catch Exception e
-            (print-result @current-test *mode* false desc)
-            (diag (str "Exception was thrown: " e)))))
-      (flush)
-      (dosync (commute current-test inc))
-      @r)))
+    (if (= *mode* :skip)
+      (print-result @current-test *mode* true *skip-reason*)
+      (try
+        (let [e (exp)
+              a (actual)
+              r (pred e a)]
+          (print-result @current-test *mode* r desc)
+          (when-not r
+            (let [es (pr-str e)
+                  as (pr-str qactual)
+                  rs (pr-str a)]
+              (diagnose es as rs)))
+          a)
+        (catch Exception e
+          (print-result @current-test *mode* false desc)
+          (diag (str "Exception was thrown: " e))
+          `test-failed)
+        (finally
+          (dosync (commute current-test inc)))))))
 
 (defmacro ok? [t & desc]
   `(test-driver (fn [] ~t)
@@ -175,3 +176,13 @@
                 (fn [e# a# r#]
                   (diag (.concat "Expected: " a#))
                   (diag (.concat "to throw: " e#)))))
+
+(defmacro runs? [body & desc]
+  `(test-driver (fn [] ~body)
+                (quote ~body)
+                (fn [] nil)
+                ~(first desc)
+                (fn [e# a#] true)
+                (fn [e# a# r#]
+                  (diag (.concat "Expected " a#
+                                 " to run through w/o exception.")))))
