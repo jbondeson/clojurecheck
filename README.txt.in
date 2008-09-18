@@ -1,0 +1,23 @@
+     ______________     ________                   ______________________
+     __  ____/__  /___________(_)___  ________________  __/__    |__  __ \
+     _  /    __  /_  __ \____  /_  / / /_  ___/  _ \_  /  __  /| |_  /_/ /
+     / /___  _  / / /_/ /___  / / /_/ /_  /   /  __/  /   _  ___ |  ____/
+     \____/  /_/  \____/___  /  \__,_/ /_/    \___//_/    /_/  |_/_/
+                        /___/
+
+An implementation of the Test Anything Protocol. It is a simple protocol to
+transfer information from tests to a harness, which in turn extracts the
+information in various ways. The protocol itself is also human readable. It's
+widely used in the Perl community.
+
+By using TAP one separates the framework of running the tests from the
+logic which displays the information of the test results. This could be
+a console runner like Perl's „prove“ utility or a graphical program or
+even a script controlling the automatic build process. The easy structure
+of TAP makes it easy to implement parsers for it.
+
+Meikel Brandmeyer <mb@kotka.de>
+Frankfurt am Main, 2008
+
+Reference Documentation in alphabetic order:
+

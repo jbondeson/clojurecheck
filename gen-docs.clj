@@ -20,9 +20,14 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/ns de.kotka.tap
-  (:refer-clojure)
-  (:use clojure.contrib.def)
-  (:load "directives.clj"
-         "infrastructure.clj"
-         "tests.clj"))
+(require 'de.kotka.tap)
+
+(let [c  (proxy [java.util.Comparator] []
+           (compare
+             [a b]
+             (let [as (str a)
+                   bs (str b)]
+               (. as compareTo bs))))
+      vs (map (fn [[n v]] v) (ns-publics (find-ns 'de.kotka.tap)))]
+  (doseq v (sort c vs)
+    (print-doc v)))

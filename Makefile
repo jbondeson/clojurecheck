@@ -2,54 +2,53 @@ PROJECT := tap
 
 SRCDIR  := src
 DISTDIR := dist
-DOCDIR  := doc
-NDDIR   := nd
 
 JAVASRC != cd ${SRCDIR} && find * -type f -name \*.java
 CLJSRC  != cd ${SRCDIR} && find * -type f -name \*.clj
+DIRS    != cd ${SRCDIR} && find * -type d
 
-JAR     := ${PROJECT}.jar
-TGZ     != echo ${PROJECT}-`shtool version -d short version.txt`.tar.gz
+VERSION != shtool version -d short version.txt
+JAR     := ${PROJECT}-${VERSION}.jar
+TGZ     := ${PROJECT}-${VERSION}.tar.gz
 
 all: jar
+
+release: jar tarball
 
 jar: ${JAR}
 
 tarball: ${TGZ}
 
 test: jar
-	@echo "--> Running Unit Tests.."
-	@env CLASSPATH=${JAR}:$${CLASSPATH} prove t
+	env CLASSPATH=${JAR}:$${CLASSPATH} prove t
 
 doc:
-	@echo "--> Generating Documentation.."
-	@../../NaturalDocs/NaturalDocs -nag -s kotka \
-		-i ${SRCDIR} -o HTML ${DOCDIR} -p ${NDDIR}
+	( cat README.txt.in; \
+	  java clojure.lang.Script gen-docs.clj ) > README.txt
 
 clean:
-	@echo "--> Cleaning Up.."
-	@rm -rf ${DISTDIR} ${JAR} *.tar.gz ${DOCDIR}
+	rm -rf ${DISTDIR} ${JAR} ${TGZ} README.txt
 
 compile.clj: ${DISTDIR}
-	@if [ -n "${CLJSRC}" ]; then \
-		echo "--> Compiling Clojure Sources.."; \
-		for clj in ${CLJSRC}; do \
-			shtool mkdir -p ${DISTDIR}/`dirname $${clj}`; \
-			shtool install -c ${SRCDIR}/$${clj} ${DISTDIR}/$${clj}; \
-		done; \
-	fi
+	@for clj in ${CLJSRC}; do \
+		echo shtool install -C ${SRCDIR}/$${clj} ${DISTDIR}/$${clj}; \
+		shtool install -C ${SRCDIR}/$${clj} ${DISTDIR}/$${clj}; \
+	done
 
-${JAR}: compile.clj
-	@echo "--> Creating JAR File.."
-	@jar cf ${JAR} -C ${DISTDIR} ${CLJSRC}
+${JAR}: doc compile.clj
+	cp README.txt ${DISTDIR}
+	cp LICENSE ${DISTDIR}
+	jar cf ${JAR} -C ${DISTDIR} .
 
-${TGZ}:
-	@echo "--> Creating Source Tarball.."
-	@shtool tarball -c "gzip -9" -o ${TGZ} \
-		-e '\.DS_Store,${DISTDIR},${JAR},\.hg,\.tar\.gz' .
+${TGZ}: doc
+	shtool tarball -c "gzip -9" -o ${TGZ} \
+		-e '\.DS_Store,${DISTDIR},\.jar,\.hg,\.tar\.gz' .
 
 ${DISTDIR}:
-	@echo "--> Creating Build Directory.."
-	@shtool mkdir -p ${DISTDIR}
+	shtool mkdir -p ${DISTDIR}
+	@for dir in ${DIRS}; do \
+		echo shtool mkdir -p ${DISTDIR}/$${dir}; \
+		shtool mkdir -p ${DISTDIR}/$${dir}; \
+	done
 
-.PHONY: all jar test doc clean compile.clj
+.PHONY: all release jar tarball test doc clean compile.clj
