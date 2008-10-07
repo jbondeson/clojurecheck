@@ -22,6 +22,57 @@
 
 (clojure/in-ns 'de.kotka.tap)
 
+(defstruct harness :plan :diag :bail-out :report-result)
+
+(defvar *the-harness*
+  (let [current-test (ref 1)]
+    (struct harness
+            ; plan
+            (fn [count]
+              (print "1..")
+              (print count)
+              (newline)
+              (flush))
+
+            ; diag
+            (fn [msg]
+              (doseq l (.split msg "\n")
+                (print "# ")
+                (print l)
+                (newline)
+                (flush)))
+
+            ; bail-out
+            (fn [& msg]
+              (print "Bail out!")
+              (when-not (nil? msg)
+                (print " ")
+                (print (first msg)))
+              (newline)
+              (flush)
+              (.exit java.lang.System 1))
+
+            ; report-result
+            (fn [m t desc]
+              (if t
+                (print "ok ")
+                (print "not ok "))
+              (print (dosync
+                       (let [c @current-test]
+                         (alter current-test inc)
+                         c)))
+              (cond
+                (= m :todo) (print " # TODO")
+                (= m :skip) (print " # SKIP"))
+              (when-not (nil? desc)
+                (print " - ")
+                (print desc))
+              (newline)
+              (flush))))
+  "The handlers. This actually implements the TAP protocol itself, but may be
+  re-bound via binding to enable different behaviour.")
+
+
 (defn plan
   "Print the test plan. Ie. the number of tests you intend to run. This gives
   the harness a chance to see, whether the tests ran completely. It is not
@@ -33,10 +84,7 @@
   | => (plan 10)
   | 1..10"
   [count]
-  (print "1..")
-  (print count)
-  (newline)
-  (flush))
+  ((*the-harness* :plan) count))
 
 (defn diag
   "Print diagnostics. Sometimes a test script wants to provide diagnostic
@@ -50,11 +98,7 @@
   | => (diag „flogiston pressure dropping rapidly“)
   | # flogiston pressure dropping rapidly"
   [msg]
-  (doseq l (.split msg "\n")
-    (print "# ")
-    (print l)
-    (newline)
-    (flush)))
+  ((*the-harness* :diag) msg))
 
 (defn bail-out
   "Bail out of the test process. Sometimes the system or the environment is so
@@ -69,32 +113,10 @@
   | => (bail-out „flogiston pressure too low“)
   | Bail out! flogiston pressure too low"
   [& msg]
-  (print "Bail out!")
-  (when-not (nil? msg)
-    (print " ")
-    (print (first msg)))
-  (newline)
-  (flush)
-  (.exit java.lang.System 1))
+  (apply (*the-harness* :bail-out) msg))
 
-(defn- print-result
-  [c m t desc]
-  (if t
-    (print "ok ")
-    (print "not ok "))
-  (print c)
-  (cond
-    (= m :todo) (print " # TODO")
-    (= m :skip) (print " # SKIP"))
-  (when-not (nil? desc)
-    (print " - ")
-    (print desc))
-  (newline)
-  (flush))
-
-(let [current-test (ref 1)]
-  (defn test-driver
-    "Driver function for the tests. This function should only be called, when
+(defn test-driver
+  "Driver function for the tests. This function should only be called, when
   defining new test macros. The driver receives the actual form under test
   as a closure as well as it's quoted form. Similarly the expected value is
   transferred. The following description is optional and might be „nil“.
@@ -128,23 +150,21 @@
   | # to be between: 100
   | # and:           150
   | # but was:       58"
-    [actual qactual exp desc pred diagnose]
-    (if (= *mode* :skip)
-      (print-result @current-test *mode* true *skip-reason*)
-      (try
-        (let [e (exp)
-              a (actual)
-              r (pred e a)]
-          (print-result @current-test *mode* r desc)
-          (when-not r
-            (let [es (pr-str e)
-                  as (pr-str qactual)
-                  rs (pr-str a)]
-              (diagnose es as rs)))
-          a)
-        (catch Exception e
-          (print-result @current-test *mode* false desc)
-          (diag (str "Exception was thrown: " e))
-          `test-failed)
-        (finally
-          (dosync (commute current-test inc)))))))
+  [actual qactual exp desc pred diagnose]
+  (if (= *mode* :skip)
+    ((*the-harness* :report-result) *mode* true *skip-reason*)
+    (try
+      (let [e (exp)
+            a (actual)
+            r (pred e a)]
+        ((*the-harness* :report-result) *mode* r desc)
+        (when-not r
+          (let [es (pr-str e)
+                as (pr-str qactual)
+                rs (pr-str a)]
+            (diagnose es as rs)))
+        a)
+      (catch Exception e
+        ((*the-harness* :report-result) *mode* false desc)
+        (diag (str "Exception was thrown: " e))
+        `test-failed))))
