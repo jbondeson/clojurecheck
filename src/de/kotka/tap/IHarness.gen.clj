@@ -20,14 +20,10 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/ns de.kotka.tap
-  (:refer-clojure)
-  (:import
-     (de.kotka.tap IHarness))
-  (:use
-     clojure.contrib.def)
-  (:load
-     "directives.clj"
-     "harness.clj"
-     "infrastructure.clj"
-     "tests.clj"))
+(use 'clojure.contrib.gen-interface)
+
+(gen-and-save-interface *builddir* 'de.kotka.tap.IHarness []
+  ['plan [Integer] Object]
+  ['diag [String] Object]
+  ['bailOut [String] Object]
+  ['reportResult [Object Boolean String] Object])
