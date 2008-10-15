@@ -32,10 +32,10 @@ try '(throws? Exception (throw (new Exception "x")) "success")' \
 
 try '(throws? Exception true)' 'not ok 1
 # Expected: true
-# to throw: java.lang.Exception' "failure w/o message"
+# to throw: #=java.lang.Exception' "failure w/o message"
 try '(throws? Exception true "failure")' 'not ok 1 - failure
 # Expected: true
-# to throw: java.lang.Exception' "failure w/ message"
+# to throw: #=java.lang.Exception' "failure w/ message"
 
 cleanup
 
