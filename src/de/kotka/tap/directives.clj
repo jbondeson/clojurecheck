@@ -99,3 +99,31 @@
   |      (ok? (inject-flogiston) „flogiston injection works“))"
   [t reason & body]
   `(skip-if* ~t ~reason (fn [] ~@body)))
+
+(defvar- *fatal* false)
+(gen-and-load-class 'de.kotka.tap.FatalTestError :extends Exception)
+
+(defn fatal*
+  "Executes the thunk in fatal context. That is a failing test will
+  abort the thunk immediately. See also „fatal“ macro."
+  [thunk]
+  (binding [*fatal* true]
+    (try
+      (thunk)
+      (catch de.kotka.tap.FatalTestError e `test-failed))))
+
+(defmacro fatal
+  "Abort on failing tests. In case one has several tests, which depend on
+  each other, one can specify a fatal block around the tests in question.
+  Should a test fail, the rest of the tests of the block are skipped.
+
+  Example:
+
+  | => (fatal
+  |      (ok? (save-flogistion-pressure?) „flogiston pressure is save“)
+  |      (is? (open-reactor-door) :opened „reactor door opened“))
+  | not ok 1 - flogiston pressure is save
+
+  Note: the second test is not executed!"
+  [& body]
+  `(fatal* (fn [] ~@body)))

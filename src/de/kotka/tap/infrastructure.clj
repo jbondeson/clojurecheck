@@ -115,9 +115,15 @@
           (let [es (pr-str e)
                 as (pr-str qactual)
                 rs (pr-str a)]
-            (diagnose es as rs)))
+            (diagnose es as rs))
+          (when *fatal*
+            (throw (new de.kotka.tap.FatalTestError))))
         a)
+      (catch de.kotka.tap.FatalTestError e
+        (throw e))
       (catch Exception e
         (report-result *mode* false desc)
         (diag (str "Exception was thrown: " e))
-        `test-failed))))
+        (if *fatal*
+          (throw (new de.kotka.tap.FatalTestError))
+          `test-failed)))))
