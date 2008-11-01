@@ -74,3 +74,13 @@
   (make-standard-harness)
   "The handlers. This actually implements the TAP protocol itself, but may be
   re-bound via binding to enable different behaviour.")
+
+(defn with-harness*
+  [harness thunk]
+  (binding [*the-harness* harness]
+    (thunk)
+    harness))
+
+(defmacro with-harness
+  [harness & body]
+  `(with-harness* ~harness (fn [] ~@body)))
