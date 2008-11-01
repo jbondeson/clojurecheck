@@ -70,7 +70,7 @@
 
 (defn test-driver
   "Driver function for the tests. This function should only be called, when
-  defining new test macros. The driver receives the actual form under test
+  defining new test methods. The driver receives the actual form under test
   as a closure as well as it's quoted form. Similarly the expected value is
   transferred. The following description is optional and might be „nil“.
   Finally two callbacks to compare the actual result against the expected
@@ -81,23 +81,24 @@
 
   Example:
 
-  | => (defmacro in-intervall?
-  |      [min max body & desc]
-  |      `(let [min# ~min
-  |             max# ~max]
-  |         (test-driver (fn [] ~body)
-  |                      '~body
-  |                      (fn [] nil)   ; Don't need „expected result“.
-  |                      ~(first desc) ; Might be „nil“.
-  |                      (fn [expected# actual#]
-  |                        (<= min# actual# max#))
-  |                      (fn [expected# actual# result#]
-  |                        (diag (str „Expected:      “ actual#))
-  |                        (diag (str „to be between: “ min#))
-  |                        (diag (str „and:           “ max#))
-  |                        (diag (str „but was:       “ result#))))))
+  | => (defmethod is* 'in-intervall?
+  |      [t desc]
+  |      (let [[min max body] (rest t)]
+  |        `(let [min# ~min
+  |               max# ~max]
+  |           (test-driver (fn [] ~body)
+  |                        (quote ~body)
+  |                        (fn [] nil)   ; Don't need „expected result“.
+  |                        ~desc         ; Might be „nil“.
+  |                        (fn [expected# actual#]
+  |                          (<= min# actual# max#))
+  |                        (fn [expected# actual# result#]
+  |                          (diag (str „Expected:      “ actual#))
+  |                          (diag (str „to be between: “ min#))
+  |                          (diag (str „and:           “ max#))
+  |                          (diag (str „but was:       “ result#)))))))
   |
-  | => (in-intervall? 100 150 (flogiston-pressure) „flogiston pressure ok“)
+  | => (is (in-intervall? 100 150 (flogiston-pressure)) „flogiston pressure ok“)
   | not ok 1 - flogiston pressure ok
   | # Expected:      (flogiston-pressure)
   | # to be between: 100

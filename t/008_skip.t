@@ -25,18 +25,18 @@
 
 echo 1..6
 
-try '(skip "for test" (ok? (do (println "FAILED") true)))' \
+try '(skip "for test" (is (do (println "FAILED") true)))' \
 	"ok 1 # SKIP - for test" "true SKIP w/o description"
-try '(skip "for test" (ok? (do (println "FAILED") false)))' \
+try '(skip "for test" (is (do (println "FAILED") false)))' \
 	'ok 1 # SKIP - for test' "false SKIP w/o description"
-try '(skip "for test" (ok? (do (println "FAILED") true) "success"))' \
+try '(skip "for test" (is (do (println "FAILED") true) "success"))' \
 	"ok 1 # SKIP - for test" "true SKIP w/ description"
-try '(skip "for test" (ok? (do (println "FAILED") false) "failure"))' \
+try '(skip "for test" (is (do (println "FAILED") false) "failure"))' \
 	'ok 1 # SKIP - for test' "false SKIP w/ description"
 
-try '(skip-if true "for test" (ok? (do (println "FAILED") false) "failure"))' \
+try '(skip-if true "for test" (is (do (println "FAILED") false) "failure"))' \
 	'ok 1 # SKIP - for test' "true skip-if w/ description"
-try '(skip-if false "for test" (ok? (do (println "OK") true) "success"))' \
+try '(skip-if false "for test" (is (do (println "OK") true) "success"))' \
 	'OK
 ok 1 - success' "false skip-if w/ description"
 

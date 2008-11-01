@@ -25,13 +25,13 @@
 
 echo 1..4
 
-try '(todo (ok? true ))' "ok 1 # TODO" \
+try '(todo (is true))' "ok 1 # TODO" \
 	"true TODO w/o description"
-try '(todo (ok? false))' 'not ok 1 # TODO
+try '(todo (is false))' 'not ok 1 # TODO
 # Expected: false to be true' "false TODO w/o description"
-try '(todo (ok? true "success"))' "ok 1 # TODO - success" \
+try '(todo (is true "success"))' "ok 1 # TODO - success" \
     "true TODO w/ description"
-try '(todo (ok? false "failure"))' 'not ok 1 # TODO - failure
+try '(todo (is false "failure"))' 'not ok 1 # TODO - failure
 # Expected: false to be true' "false TODO w/ description"
 
 cleanup

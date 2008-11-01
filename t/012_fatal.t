@@ -25,9 +25,9 @@
 
 echo 1..2
 
-try '(fatal (ok? true) (ok? true))' 'ok 1
+try '(fatal (is true) (is true))' 'ok 1
 ok 2' "fatal runs through on success"
-try '(fatal (ok? false) (ok? true))' 'not ok 1
+try '(fatal (is false) (is true))' 'not ok 1
 # Expected: false to be true' "fatal stops on failure"
 
 cleanup

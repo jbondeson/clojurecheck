@@ -25,14 +25,14 @@
 
 echo 1..4
 
-try '(unlike? (.concat "foo" "bar") #"xx")' "ok 1" "true w/o description"
-try '(unlike? (.concat "foo" "bar") #"o+b")' 'not ok 1
+try '(is (unlike? (.concat "foo" "bar") #"xx"))' "ok 1" "true w/o description"
+try '(is (unlike? (.concat "foo" "bar") #"o+b"))' 'not ok 1
 # Expected:     (.concat "foo" "bar")
 # not to match: #"o+b"
 # string was:   "foobar"' "false w/o description"
-try '(unlike? (.concat "foo" "bar") #"xx" "success")' "ok 1 - success" \
+try '(is (unlike? (.concat "foo" "bar") #"xx") "success")' "ok 1 - success" \
     "true w/ description"
-try '(unlike? (.concat "foo" "bar") #"o+b" "failure")' 'not ok 1 - failure
+try '(is (unlike? (.concat "foo" "bar") #"o+b") "failure")' 'not ok 1 - failure
 # Expected:     (.concat "foo" "bar")
 # not to match: #"o+b"
 # string was:   "foobar"' "false w/ description"

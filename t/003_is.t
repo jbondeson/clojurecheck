@@ -25,13 +25,13 @@
 
 echo 1..4
 
-try "(is? (- 1 1) 0)" "ok 1" "true w/o description"
-try "(is? (+ 1 1) 0)" "not ok 1
+try "(is (= (- 1 1) 0))" "ok 1" "true w/o description"
+try "(is (= (+ 1 1) 0))" "not ok 1
 # Expected: (+ 1 1)
 # to be:    0
 # but was:  2" "false w/o description"
-try "(is? (- 1 1) 0 \"success\")" "ok 1 - success" "true w/ description"
-try "(is? (+ 1 1) 0 \"failure\")" "not ok 1 - failure
+try "(is (= (- 1 1) 0) \"success\")" "ok 1 - success" "true w/ description"
+try "(is (= (+ 1 1) 0) \"failure\")" "not ok 1 - failure
 # Expected: (+ 1 1)
 # to be:    0
 # but was:  2" "false w/ description"

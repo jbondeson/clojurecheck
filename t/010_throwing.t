@@ -25,19 +25,17 @@
 
 echo 1..4
 
-try '(is? 1 (runs? 1))' 'ok 1
-ok 2' 'success w/o message'
-try '(is? 1 (runs? 1 "success"))' 'ok 1 - success
-ok 2' 'success w/ message'
+try '(is (throwing? Exception (throw (new Exception "x"))))' \
+	"ok 1" "success w/o message"
+try '(is (throwing? Exception (throw (new Exception "x"))) "success")' \
+	"ok 1 - success" "success w/ message"
 
-try '(is? (symbol "de.kotka.tap" "test-failed") (runs? (do (throw (new Exception "x")) "reached")))' \
-'not ok 1
-# Exception was thrown: java.lang.Exception: x
-ok 2' 'failure w/o message'
-try '(is? (symbol "de.kotka.tap" "test-failed") (runs? (do (throw (new Exception "x")) "reached") "failure"))' \
-'not ok 1 - failure
-# Exception was thrown: java.lang.Exception: x
-ok 2' 'failure w/ message'
+try '(is (throwing? Exception true))' 'not ok 1
+# Expected: true
+# to throw: #=java.lang.Exception' "failure w/o message"
+try '(is (throwing? Exception true) "failure")' 'not ok 1 - failure
+# Expected: true
+# to throw: #=java.lang.Exception' "failure w/ message"
 
 cleanup
 
