@@ -26,4 +26,6 @@
   ['plan [Integer] Object]
   ['diag [String] Object]
   ['bailOut [String] Object]
-  ['reportResult [Object Boolean String] Object])
+  ['reportResult [Object Boolean String] Object]
+  ['getResult [] Object]
+  ['getDiagnostics [] String])
