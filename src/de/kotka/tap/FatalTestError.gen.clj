@@ -20,14 +20,4 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/ns de.kotka.tap
-  (:refer-clojure)
-  (:import
-     (de.kotka.tap IHarness FatalTestError))
-  (:use
-     clojure.contrib.def)
-  (:load
-     "directives.clj"
-     "harness.clj"
-     "infrastructure.clj"
-     "tests.clj"))
+(gen-and-save-class *builddir* 'de.kotka.tap.FatalTestError :extends Exception)

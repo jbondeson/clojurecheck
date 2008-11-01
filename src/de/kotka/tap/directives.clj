@@ -101,7 +101,6 @@
   `(skip-if* ~t ~reason (fn [] ~@body)))
 
 (defvar- *fatal* false)
-(gen-and-load-class 'de.kotka.tap.FatalTestError :extends Exception)
 
 (defn fatal*
   "Executes the thunk in fatal context. That is a failing test will
@@ -110,7 +109,7 @@
   (binding [*fatal* true]
     (try
       (thunk)
-      (catch de.kotka.tap.FatalTestError e `test-failed))))
+      (catch FatalTestError e `test-failed))))
 
 (defmacro fatal
   "Abort on failing tests. In case one has several tests, which depend on
