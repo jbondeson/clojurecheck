@@ -20,17 +20,20 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/ns de.kotka.tap
-  (:refer-clojure)
-  (:import
-     (de.kotka.tap IHarness FatalTestError))
-  (:use
-     clojure.contrib.def)
-  (:load
-     "directives.clj"
-     "harness.clj"
-     "infrastructure.clj"
-     "tests.clj"
-     "clojurecheck/arbitrary.clj"
-     "clojurecheck/combinators.clj"
-     "clojurecheck/generators.clj"))
+(clojure/in-ns 'de.kotka.tap)
+
+(defmacro let-gen
+  "let-gen creates a new generator, which binds the given generators
+  to the given variables and then executes the body. It is similar to
+  for-all, which is used to define a test case. However the let-gen
+  is not supposed to be run with test cases in the body. The body must
+  not have side effects."
+  [gen-bindings & body]
+  (let [size (gensym "let-gen_size__")]
+    `(fn [_# ~size]
+       (let ~(vec (mapcat (fn [[v g]]
+                            (if (vector? g)
+                              [v `(arbitrary ~@g ~size)]
+                              [v `(arbitrary ~g ~size)]))
+                          (partition 2 gen-bindings)))
+         ~@body))))
