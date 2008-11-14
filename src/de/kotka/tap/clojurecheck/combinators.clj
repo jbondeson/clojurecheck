@@ -22,6 +22,12 @@
 
 (clojure/in-ns 'de.kotka.tap)
 
+(defn- apply-generator
+  [g s]
+  (if (vector? g)
+    (apply arbitrary (conj g s))
+    (arbitrary g s)))
+
 (defmacro let-gen
   "let-gen creates a new generator, which binds the given generators
   to the given variables and then executes the body. It is similar to
@@ -32,9 +38,9 @@
   (let [size (gensym "let-gen_size__")]
     `(fn [_# ~size]
        (let ~(vec (mapcat (fn [[v g]]
-                            (if (vector? g)
-                              [v `(arbitrary ~@g ~size)]
-                              [v `(arbitrary ~g ~size)]))
+                            [v `((ns-resolve (symbol "de.kotka.tap")
+                                             (symbol "apply-generator"))
+                                   ~g ~size)])
                           (partition 2 gen-bindings)))
          ~@body))))
 
@@ -60,4 +66,20 @@
   (let [len (dec (count gens))]
     (let-gen [l [Integer 0 len]
               v (nth gens l)]
+      v)))
+
+(defn frequency
+  "frequency takes a list of of generators, each prefix with weight.
+  The weights have to sum up to 100. The higher the weight,
+  the more often the following generator is chosen."
+  [& weights-and-gens]
+  (let [weights-and-gens (partition 2 weights-and-gens)
+        weights-and-gens (reduce (fn [w-n-g [w g]]
+                                   (let [p-w (first (peek w-n-g))]
+                                     (conj w-n-g [(+ p-w w) g])))
+                                 [(first weights-and-gens)]
+                                 (rest weights-and-gens))]
+    (let-gen [guess [Integer 1 100]
+              v     (first (drop-while #(< (first %) guess)
+                                       weights-and-gens))]
       v)))
