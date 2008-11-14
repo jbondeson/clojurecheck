@@ -70,6 +70,45 @@
         (newline)
         (flush)))))
 
+(defn make-batch-harness
+  "Create a new batch harness suitable to run recursive tests. So one
+  can specify tests, which themselves contain other tests."
+  []
+  (let [our-plan     (ref :noplan)
+        current-test (ref 1)
+        failed-test  (ref false)
+        diagnostics  (ref "")]
+    (proxy [IHarness] []
+      (plan
+        [count]
+        (dosync (ref-set our-plan count)))
+
+      (diag
+        [msg]
+        (dosync (commute diagnostics #(str %1 \newline %2) msg)))
+
+      (bailOut
+        [msg]
+        (dosync (commute diagnostics #(str %1 "Bailing out!"
+                                           (when msg (str " " msg)))))
+        (throw (new de.kotka.tap.FatalTestError)))
+
+      (reportResult
+        [m t desc]
+        (when-not t
+          (dosync (ref-set failed-test true)))
+        (dosync (alter current-test inc)))
+
+      (getResult
+        []
+        (and (or (= @our-plan :noplan)
+                 (= @our-plan (dec @current-test)))
+             (not @failed-test)))
+
+      (getDiagnostics
+        []
+        @diagnostics))))
+
 (defvar *the-harness*
   (make-standard-harness)
   "The handlers. This actually implements the TAP protocol itself, but may be
