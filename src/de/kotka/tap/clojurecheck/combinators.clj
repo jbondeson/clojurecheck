@@ -83,3 +83,10 @@
               v     (first (drop-while #(< (first %) guess)
                                        weights-and-gens))]
       v)))
+
+(defn elements
+  "elements returns a generator, which chooses one of the given values."
+  [& elems]
+  (let [len (dec (count elems))]
+    (let-gen [l [Integer 0 len]]
+      (nth elems l))))
