@@ -42,3 +42,14 @@
   "unit returns a generator, which always returns the given value."
   [x]
   (constantly x))
+
+(defmacro with-size
+  "Although normally not necessary, it is sometimes desirable to have
+  access to the size parameter when building a generator. This can be
+  achieved by the with-size combinator. The body must return a generator.
+
+  Example:
+
+  | => (with-size s (let-gen [x [Integer 0 size]] x))"
+  [sv & body]
+  `(fn [_# size#] (arbitrary ((fn [~sv] ~@body) size#) size#)))
