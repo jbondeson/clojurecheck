@@ -37,3 +37,8 @@
                               [v `(arbitrary ~g ~size)]))
                           (partition 2 gen-bindings)))
          ~@body))))
+
+(defn unit
+  "unit returns a generator, which always returns the given value."
+  [x]
+  (constantly x))
