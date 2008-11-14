@@ -20,16 +20,22 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/ns de.kotka.tap
-  (:refer-clojure)
-  (:import
-     (de.kotka.tap IHarness FatalTestError))
-  (:use
-     clojure.contrib.def)
-  (:load
-     "directives.clj"
-     "harness.clj"
-     "infrastructure.clj"
-     "tests.clj"
-     "clojurecheck/arbitrary.clj"
-     "clojurecheck/generators.clj"))
+(clojure/in-ns 'de.kotka.tap)
+
+(defmethod arbitrary Double
+  ([_ mn mx _]
+   (+ mn (* (- mx mn) (.nextDouble *prng*))))
+  ([_ size]
+   (arbitrary Double (- size) size nil)))
+
+(defmethod arbitrary Integer
+  ([_ mn mx _]
+   (int (Math/round (arbitrary Double mn mx nil))))
+  ([_ size]
+   (arbitrary Integer (- size) size nil)))
+
+(defmethod arbitrary Character
+  ([_ source _]
+   (.charAt source (arbitrary Integer 0 (dec (.length source)) nil)))
+  ([_ _]
+   (char (arbitrary Integer 32 255 nil))))
