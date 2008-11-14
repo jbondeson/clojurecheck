@@ -53,3 +53,11 @@
   | => (with-size s (let-gen [x [Integer 0 size]] x))"
   [sv & body]
   `(fn [_# size#] (arbitrary ((fn [~sv] ~@body) size#) size#)))
+
+(defn one-of
+  "one-of chooses one of the given generators with equal probability."
+  [& gens]
+  (let [len (dec (count gens))]
+    (let-gen [l [Integer 0 len]
+              v (nth gens l)]
+      v)))
