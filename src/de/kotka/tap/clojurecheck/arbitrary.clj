@@ -53,3 +53,72 @@
 (defmethod arbitrary :default
   [x size]
   (x nil size))
+
+(defn- apply-generator
+  [g s]
+  (if (vector? g)
+    (apply arbitrary (conj g s))
+    (arbitrary g s)))
+
+(defn- make-binding-vector
+  [size gen-bindings]
+  (vec (mapcat (fn [[v g]]
+                 [v `((ns-resolve (symbol "de.kotka.tap")
+                                  (symbol "apply-generator"))
+                        ~g ~size)])
+               (partition 2 gen-bindings))))
+
+(defvar
+  *max-checks*
+  100
+  "The maximum number of iterations, which are done by for-all.")
+
+(defn for-all*
+  "This is the driver for the for-all macro. Should not be called
+  directly."
+  [gen test-fn]
+  (loop [i 0]
+    (let [h     (make-batch-harness)
+          input (gen i)]
+      (binding [*the-harness* h]
+        (try
+          (test-fn input)
+          (catch Exception e
+            (report-result *mode* false nil)
+            (diag (str "Exception was thrown: " e)))))
+      (if (and (< i *max-checks*) (.getResult h))
+        (recur (inc i))
+        [h input]))))
+
+(defmacro for-all
+  "for-all binds the given generators to the given values and runs the
+  body. The body might define any tests (and even a plan) since it is
+  run against its own harness."
+  [gen-bindings & body]
+  (let [size    (gensym "for-all_size__")
+        xs      (take-nth 2 gen-bindings)
+        gen     `(fn [~size]
+                   (let ~(make-binding-vector size gen-bindings)
+                     (hash-map ~@(mapcat (fn [x] `[(quote ~x) ~x]) xs))))
+        test-fn `(fn [~(hash-map :syms (into [] xs))] ~@body)]
+    `(for-all* ~gen ~test-fn)))
+
+(defn holds?*
+  "This is the driver function for the holds? macro and should not be
+  called directly."
+  [prop desc]
+  (let [[h vs] (prop)]
+    (if (.getResult h)
+      (report-result *mode* true desc)
+      (do
+        (report-result *mode* false desc)
+        (diag "Property failed, counter example is:")
+        (doseq [vr vl] vs
+          (diag (str "  " vr " => " vl)))
+        (diag "\nDiagnostics were:")
+        (diag (.getDiagnostics h))))))
+
+(defmacro holds?
+  "holds? tests the given property. A property is defined by for-all."
+  [prop & desc]
+  `(holds?* (fn [] ~prop) ~(first desc)))

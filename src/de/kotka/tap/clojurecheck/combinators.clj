@@ -22,12 +22,6 @@
 
 (clojure/in-ns 'de.kotka.tap)
 
-(defn- apply-generator
-  [g s]
-  (if (vector? g)
-    (apply arbitrary (conj g s))
-    (arbitrary g s)))
-
 (defmacro let-gen
   "let-gen creates a new generator, which binds the given generators
   to the given variables and then executes the body. It is similar to
@@ -37,11 +31,7 @@
   [gen-bindings & body]
   (let [size (gensym "let-gen_size__")]
     `(fn [_# ~size]
-       (let ~(vec (mapcat (fn [[v g]]
-                            [v `((ns-resolve (symbol "de.kotka.tap")
-                                             (symbol "apply-generator"))
-                                   ~g ~size)])
-                          (partition 2 gen-bindings)))
+       (let ~(make-binding-vector size gen-bindings)
          ~@body))))
 
 (defn unit
