@@ -90,3 +90,18 @@
   (let [len (dec (count elems))]
     (let-gen [l [Integer 0 len]]
       (nth elems l))))
+
+(defn list-of
+  "list-of returns a generator, which generates a list of the given
+  generator."
+  [g]
+  (with-size s
+    (let-gen [l [Integer 0 s]]
+      (reduce (fn [lst _] (conj lst (apply-generator g s))) nil (range l)))))
+
+(defn vector-of
+  "vector-of returns a generator, which generates a vector of the given
+  generators."
+  [g]
+  (let-gen [lst (list-of g)]
+    (into [] lst)))
