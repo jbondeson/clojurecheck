@@ -20,15 +20,22 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/ns de.kotka.tap
-  (:refer-clojure)
-  (:import
-     (de.kotka.tap IHarness FatalTestError))
-  (:use
-     clojure.contrib.def)
-  (:load
-     "directives.clj"
-     "harness.clj"
-     "infrastructure.clj"
-     "tests.clj"
-     "clojurecheck/arbitrary.clj"))
+(clojure/in-ns 'de.kotka.tap)
+
+(defvar
+  *prng*
+  (new java.util.Random)
+  "The PRNG used to generate the test data.")
+
+(defn with-prng*
+  "Install the given PRNG while running the given thunk. It must conform
+  to the interface of java.util.Random!"
+  [prng thunk]
+  (binding [*prng* prng]
+    (thunk)))
+
+(defmacro with-prng
+  "Install the given PRNG while running the given body. It must conform
+  to the interface of java.util.Random!"
+  [prng & body]
+  `(with-prng* ~prng (fn [] ~@body)))
