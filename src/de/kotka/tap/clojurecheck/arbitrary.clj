@@ -39,3 +39,17 @@
   to the interface of java.util.Random!"
   [prng & body]
   `(with-prng* ~prng (fn [] ~@body)))
+
+(defmulti
+  #^{:doc
+  "The arbitrary multimethod defines generators for different types.
+  It takes at least two arguments: the type and a size argument. The
+  type may be a class or keyword defining which value to generator. It
+  is also possible to pass more arguments to the method. However the
+  type will always be the first one, size the last."}
+  arbitrary
+  (fn [x & _] x))
+
+(defmethod arbitrary :default
+  [x size]
+  (x nil size))
