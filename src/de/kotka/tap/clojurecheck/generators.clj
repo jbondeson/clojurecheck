@@ -39,3 +39,7 @@
    (.charAt source (arbitrary Integer 0 (dec (.length source)) nil)))
   ([_ _]
    (char (arbitrary Integer 32 255 nil))))
+
+(defmethod arbitrary Boolean
+  [_ _]
+  (arbitrary (elements true false) nil))
