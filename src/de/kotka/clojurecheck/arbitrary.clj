@@ -20,7 +20,7 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/in-ns 'de.kotka.tap)
+(clojure.core/in-ns 'de.kotka.clojurecheck)
 
 (defvar
   *prng*
@@ -63,7 +63,7 @@
 (defn- make-binding-vector
   [size gen-bindings]
   (vec (mapcat (fn [[v g]]
-                 [v `((ns-resolve (symbol "de.kotka.tap")
+                 [v `((ns-resolve (symbol "de.kotka.clojurecheck")
                                   (symbol "apply-generator"))
                         ~g ~size)])
                (partition 2 gen-bindings))))
@@ -113,7 +113,7 @@
       (do
         (report-result *mode* false desc)
         (diag "Property failed, counter example is:")
-        (doseq [vr vl] vs
+        (doseq [[vr vl] vs]
           (diag (str "  " vr " => " vl)))
         (diag "\nDiagnostics were:")
         (diag (.getDiagnostics h))))))

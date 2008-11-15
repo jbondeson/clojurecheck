@@ -20,7 +20,7 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/in-ns 'de.kotka.tap)
+(clojure.core/in-ns 'de.kotka.clojurecheck)
 
 (defmethod arbitrary Double
   ([_ mn mx _]

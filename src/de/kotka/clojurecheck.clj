@@ -20,12 +20,15 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(use 'clojure.contrib.gen-interface)
-
-(gen-and-save-interface *builddir* 'de.kotka.tap.IHarness []
-  ['plan [Integer] Object]
-  ['diag [String] Object]
-  ['bailOut [String] Object]
-  ['reportResult [Object Boolean String] Object]
-  ['getResult [] Object]
-  ['getDiagnostics [] String])
+(clojure.core/ns de.kotka.clojurecheck
+  (:use
+     clojure.contrib.def
+     clojure.contrib.gen-interface)
+  (:load
+     "clojurecheck/directives"
+     "clojurecheck/harness"
+     "clojurecheck/infrastructure"
+     "clojurecheck/tests"
+     "clojurecheck/arbitrary"
+     "clojurecheck/combinators"
+     "clojurecheck/generators"))

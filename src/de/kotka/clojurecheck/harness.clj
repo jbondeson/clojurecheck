@@ -20,7 +20,18 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/in-ns 'de.kotka.tap)
+(clojure.core/in-ns 'de.kotka.clojurecheck)
+
+(when *compile-files*
+  (gen-and-save-interface *compile-path* 'de.kotka.clojurecheck.IHarness []
+                          ['plan [Integer] Object]
+                          ['diag [String] Object]
+                          ['bailOut [String] Object]
+                          ['reportResult [Object Boolean String] Object]
+                          ['getResult [] Object]
+                          ['getDiagnostics [] String]))
+
+(import '(de.kotka.clojurecheck IHarness))
 
 (defn make-standard-harness
   "make-standard-harness creates a new standard harness."
@@ -36,7 +47,7 @@
 
       (diag
         [msg]
-        (doseq l (.split msg "\n")
+        (doseq [l (.split msg "\n")]
           (print "# ")
           (print l)
           (newline)
@@ -91,7 +102,7 @@
         [msg]
         (dosync (commute diagnostics #(str %1 "Bailing out!"
                                            (when msg (str " " msg)))))
-        (throw (new de.kotka.tap.FatalTestError)))
+        (throw (new FatalTestError)))
 
       (reportResult
         [m t desc]

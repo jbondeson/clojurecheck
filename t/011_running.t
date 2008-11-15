@@ -31,11 +31,11 @@ try '(is (= (is (running? 1) "success") 1))' 'ok 1 - success
 ok 2' 'success w/ message'
 
 try '(is (= (is (running? (do (throw (new Exception "x")) "reached")))
-            (symbol "de.kotka.tap" "test-failed")))' 'not ok 1
+            (symbol "de.kotka.clojurecheck" "test-failed")))' 'not ok 1
 # Exception was thrown: java.lang.Exception: x
 ok 2' 'failure w/o message'
 try '(is (= (is (running? (do (throw (new Exception "x")) "reached")) "failure")
-            (symbol "de.kotka.tap" "test-failed")))' \
+            (symbol "de.kotka.clojurecheck" "test-failed")))' \
 'not ok 1 - failure
 # Exception was thrown: java.lang.Exception: x
 ok 2' 'failure w/ message'

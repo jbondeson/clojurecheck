@@ -1,15 +1,14 @@
-PROJECT := tap
+PROJECT := clojurecheck
 
 SRCDIR  := src
-DISTDIR := dist
+DISTDIR := classes
 
 JAVASRC != cd ${SRCDIR} && find * -type f -name \*.java
-CLJSRC  != cd ${SRCDIR} && find * -type f \( -name \*.clj -and -not -name \*.gen.clj \)
-GCCLJSRC!= cd ${SRCDIR} && find * -type f -name \*.gen.clj
+CLJSRC  != cd ${SRCDIR} && find * -type f -name \*.clj
 DIRS    != cd ${SRCDIR} && find * -type d
 
 VERSION != shtool version -d short version.txt
-JAR     := ${PROJECT}-${VERSION}.jar
+JAR     := ${PROJECT}.jar
 TGZ     := ${PROJECT}-${VERSION}.tar.gz
 
 all: jar
@@ -25,12 +24,13 @@ test: jar
 
 doc: compile
 	( cat README.txt.in; \
-	  java clojure.lang.Script gen-docs.clj ) > README.txt
+	  env CLASSPATH=classes:$${CLASSPATH} java clojure.lang.Script gen-docs.clj ) > README.txt
 
 clean:
 	rm -rf ${DISTDIR} ${JAR} ${TGZ} README.txt
 
-compile: ${CLJSRC:C/^/dist\//} ${GCCLJSRC:R:R:C/^/dist\//:C/$/.class/}
+compile: ${CLJSRC:C/^/src\//} ${DISTDIR}
+	env CLASSPATH=src:classes:$${CLASSPATH} java clojure.lang.Script compile.clj
 
 bump-version:
 	shtool version -l txt -n ${PROJECT} -i v version.txt
@@ -40,16 +40,6 @@ bump-revision:
 
 bump-level:
 	shtool version -l txt -n ${PROJECT} -i l version.txt
-
-.for _clj in ${CLJSRC}
-dist/${_clj}: src/${_clj} ${DISTDIR}
-	shtool install -c src/${_clj} dist/${_clj}
-.endfor
-
-.for _clj in ${GCCLJSRC}
-dist/${_clj:R:R}.class: src/${_clj} ${DISTDIR}
-	java clojure.lang.Script gen-class.clj -- ${DISTDIR} ${_clj}
-.endfor
 
 ${JAR}: doc compile
 	cp README.txt ${DISTDIR}

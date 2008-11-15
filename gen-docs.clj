@@ -20,7 +20,7 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(require 'de.kotka.tap)
+(require 'de.kotka.clojurecheck)
 
 (let [c  (proxy [java.util.Comparator] []
            (compare
@@ -28,6 +28,6 @@
              (let [as (str a)
                    bs (str b)]
                (. as compareTo bs))))
-      vs (map (fn [[n v]] v) (ns-publics (find-ns 'de.kotka.tap)))]
-  (doseq v (sort c vs)
+      vs (map (fn [[n v]] v) (ns-publics (find-ns 'de.kotka.clojurecheck)))]
+  (doseq [v (sort c vs)]
     (print-doc v)))

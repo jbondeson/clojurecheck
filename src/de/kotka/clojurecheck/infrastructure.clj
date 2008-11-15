@@ -20,7 +20,7 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(clojure/in-ns 'de.kotka.tap)
+(clojure.core/in-ns 'de.kotka.clojurecheck)
 
 (defn plan
   "Print the test plan. Ie. the number of tests you intend to run. This gives
@@ -118,13 +118,13 @@
                 rs (pr-str a)]
             (diagnose es as rs))
           (when *fatal*
-            (throw (new de.kotka.tap.FatalTestError))))
+            (throw (new FatalTestError))))
         a)
-      (catch de.kotka.tap.FatalTestError e
+      (catch FatalTestError e
         (throw e))
       (catch Exception e
         (report-result *mode* false desc)
         (diag (str "Exception was thrown: " e))
         (if *fatal*
-          (throw (new de.kotka.tap.FatalTestError))
+          (throw (new FatalTestError))
           `test-failed)))))

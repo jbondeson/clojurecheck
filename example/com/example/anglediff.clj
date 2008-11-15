@@ -1,4 +1,4 @@
-(clojure/ns com.example.anglediff)
+(clojure.core/ns com.example.anglediff)
 
 ; See property fail, but tests succeed.
 (defn anglediff

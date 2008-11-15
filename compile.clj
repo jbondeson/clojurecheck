@@ -20,4 +20,5 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(gen-and-save-class *builddir* 'de.kotka.tap.FatalTestError :extends Exception)
+(binding [*compile-path* "classes"]
+  (compile 'de.kotka.clojurecheck))
