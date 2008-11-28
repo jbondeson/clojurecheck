@@ -100,14 +100,6 @@
   [t reason & body]
   `(skip-if* ~t ~reason (fn [] ~@body)))
 
-(when *compile-files*
-  (gen-and-save-class *compile-path* 'de.kotka.clojurecheck.FatalTestError
-    :extends Exception)
-  (gen-and-load-class 'de.kotka.clojurecheck.FatalTestError
-    :extends Exception))
-
-(import '(de.kotka.clojurecheck FatalTestError))
-
 (defvar- *fatal* false)
 
 (defn fatal*

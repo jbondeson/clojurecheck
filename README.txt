@@ -18,6 +18,3 @@ of TAP makes it easy to implement parsers for it.
 
 Meikel Brandmeyer <mb@kotka.de>
 Frankfurt am Main, 2008
-
-Reference Documentation in alphabetic order:
-

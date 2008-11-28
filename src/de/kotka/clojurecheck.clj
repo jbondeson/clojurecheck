@@ -24,6 +24,8 @@
   (:use
      clojure.contrib.def
      clojure.contrib.gen-interface)
+  (:import
+     (de.kotka.clojurecheck FatalTestError))
   (:load
      "clojurecheck/directives"
      "clojurecheck/harness"

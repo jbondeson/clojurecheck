@@ -20,5 +20,6 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
-(binding [*compile-path* "classes"]
-  (compile 'de.kotka.clojurecheck))
+(clojure.core/ns de.kotka.clojurecheck.FatalTestError
+  (:gen-class
+     :extends Exception))
