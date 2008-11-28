@@ -5,11 +5,9 @@ __END__
 (clojure.core/ns com.example.anglediff.test
   (:use
      com.example.anglediff
-     [de.kotka.clojurecheck :only (is let-gen holds? for-all)])
-  (:require
-     [de.kotka.clojurecheck :as cc]))
+     [de.kotka.clojurecheck :only (is let-gen holds? for-all plan)]))
 
-(cc/plan 7)
+(plan 7)
 
 (is (= (anglediff 0 0) 0) "zero at zero")
 (is (= (anglediff 90 90) 0) "zero at 90")
