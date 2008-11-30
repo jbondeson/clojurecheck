@@ -22,14 +22,14 @@
 
 (clojure.core/in-ns 'de.kotka.clojurecheck)
 
-(when *compile-files*
-  (gen-and-save-interface *compile-path* 'de.kotka.clojurecheck.IHarness []
-                          ['plan [Integer] Object]
-                          ['diag [String] Object]
-                          ['bailOut [String] Object]
-                          ['reportResult [Object Boolean String] Object]
-                          ['getResult [] Object]
-                          ['getDiagnostics [] String]))
+(gen-interface
+  :name    de.kotka.clojurecheck.IHarness
+  :methods [[plan [Integer] Object]
+            [diag [String] Object]
+            [bailOut [String] Object]
+            [reportResult [Object Boolean String] Object]
+            [getResult [] Object]
+            [getDiagnostics [] String]])
 
 (import '(de.kotka.clojurecheck IHarness))
 

@@ -22,8 +22,7 @@
 
 (clojure.core/ns de.kotka.clojurecheck
   (:use
-     clojure.contrib.def
-     clojure.contrib.gen-interface)
+     [clojure.contrib.def :only (defvar defvar-)])
   (:import
      (de.kotka.clojurecheck FatalTestError))
   (:load
