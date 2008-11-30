@@ -102,6 +102,13 @@
 
 (defvar- *fatal* false)
 
+(gen-class
+  :name    de.kotka.clojurecheck.FatalTestError
+  :extends Exception
+  :load-impl-ns false)
+
+(import '(de.kotka.clojurecheck FatalTestError))
+
 (defn fatal*
   "Executes the thunk in fatal context. That is a failing test will
   abort the thunk immediately. See also „fatal“ macro."

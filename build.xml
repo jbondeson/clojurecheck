@@ -30,7 +30,6 @@
 			</classpath>
 			<sysproperty key="clojure.compile.path"
 				value="${build}"/>
-			<arg value="de.kotka.clojurecheck.FatalTestError"/>
 			<arg value="de.kotka.clojurecheck"/>
 		</java>
 	</target>

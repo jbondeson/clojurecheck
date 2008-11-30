@@ -23,8 +23,6 @@
 (clojure.core/ns de.kotka.clojurecheck
   (:use
      [clojure.contrib.def :only (defvar defvar-)])
-  (:import
-     (de.kotka.clojurecheck FatalTestError))
   (:load
      "clojurecheck/directives"
      "clojurecheck/harness"
