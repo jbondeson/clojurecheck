@@ -104,8 +104,7 @@
 
 (gen-class
   :name    de.kotka.clojurecheck.FatalTestError
-  :extends Exception
-  :load-impl-ns false)
+  :extends Exception)
 
 (import '(de.kotka.clojurecheck FatalTestError))
 
