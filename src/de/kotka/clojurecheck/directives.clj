@@ -20,6 +20,8 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
+; (:use [clojure.contrib.def :only (defvar-)])
+
 (clojure.core/in-ns 'de.kotka.clojurecheck)
 
 (defvar- *mode*        :normal)
@@ -106,7 +108,7 @@
   :name    de.kotka.clojurecheck.FatalTestError
   :extends Exception)
 
-(import '(de.kotka.clojurecheck FatalTestError))
+(import 'de.kotka.clojurecheck.FatalTestError)
 
 (defn fatal*
   "Executes the thunk in fatal context. That is a failing test will

@@ -20,6 +20,8 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
+; (:use [clojure.contrib.def :only (defvar)])
+
 (clojure.core/in-ns 'de.kotka.clojurecheck)
 
 (gen-interface
@@ -31,7 +33,7 @@
             [getResult [] Object]
             [getDiagnostics [] String]])
 
-(import '(de.kotka.clojurecheck IHarness))
+(import 'de.kotka.clojurecheck.IHarness)
 
 (defn make-standard-harness
   "make-standard-harness creates a new standard harness."

@@ -20,10 +20,11 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
+; (:use [clojure.contrib.def :only (defvar)])
+
 (clojure.core/in-ns 'de.kotka.clojurecheck)
 
-(defvar
-  *prng*
+(defvar *prng*
   (new java.util.Random)
   "The PRNG used to generate the test data.")
 
@@ -68,8 +69,7 @@
                         ~g ~size)])
                (partition 2 gen-bindings))))
 
-(defvar
-  *max-checks*
+(defvar *max-checks*
   100
   "The maximum number of iterations, which are done by for-all.")
 
