@@ -25,8 +25,8 @@
      [clojure.contrib.def :only (defvar defvar-)])
   (:load
      "clojurecheck/directives"
-     "clojurecheck/harness"
      "clojurecheck/infrastructure"
+     "clojurecheck/harness"
      "clojurecheck/tests"
      "clojurecheck/arbitrary"
      "clojurecheck/combinators"

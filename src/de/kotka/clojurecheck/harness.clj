@@ -24,115 +24,112 @@
 
 (clojure.core/in-ns 'de.kotka.clojurecheck)
 
-(gen-interface
-  :name    de.kotka.clojurecheck.IHarness
-  :methods [[plan [Integer] Object]
-            [diag [String] Object]
-            [bailOut [String] Object]
-            [reportResult [Object Boolean String] Object]
-            [getResult [] Object]
-            [getDiagnostics [] String]])
-
-(import 'de.kotka.clojurecheck.IHarness)
-
 (defn make-standard-harness
-  "make-standard-harness creates a new standard harness."
+  "Creates a new standard harness, which reports in TAP format to *out*."
   []
-  (let [current-test (ref 1)]
-    (proxy [IHarness] []
-      (plan
-        [count]
-        (print "1..")
-        (print count)
-        (newline)
-        (flush))
+  (hash-map :type         ::Standard
+            :current-test (ref 0)))
 
-      (diag
-        [msg]
-        (doseq [l (.split msg "\n")]
-          (print "# ")
-          (print l)
-          (newline)
-          (flush)))
+(defmethod plan ::Standard
+  [cnt]
+  (print "1..")
+  (print cnt)
+  (newline)
+  (flush))
 
-      (bailOut
-        [msg]
-        (print "Bail out!")
-        (when msg
-          (print " ")
-          (print msg))
-        (newline)
-        (flush)
-        (.exit java.lang.System 1))
+(defmethod diag ::Standard
+  [msg]
+  (doseq [l (.split msg "\n")]
+    (print "# ")
+    (print l)
+    (newline)
+    (flush)))
 
-      (reportResult
-        [m t desc]
-        (if t
-          (print "ok ")
-          (print "not ok "))
-        (print (dosync
-                 (let [c @current-test]
-                   (alter current-test inc)
-                   c)))
-        (cond
-          (= m :todo) (print " # TODO")
-          (= m :skip) (print " # SKIP"))
-        (when-not (nil? desc)
-          (print " - ")
-          (print desc))
-        (newline)
-        (flush)))))
+(defmethod bail-out ::Standard
+  ([]
+   (bail-out nil))
+  ([msg]
+   (print "Bail out!")
+   (when msg
+     (print " ")
+     (print msg))
+   (newline)
+   (flush)
+   (java.lang.System/exit 1)))
+
+(defmethod report-result ::Standard
+  [m t desc]
+  (if t
+    (print "ok ")
+    (print "not ok "))
+  (print (dosync (commute (*the-harness* :current-test) inc)))
+  (condp = m
+    :todo (print " # TODO")
+    :skip (print " # SKIP")
+    nil)
+  (when desc
+    (print " - ")
+    (print desc))
+  (newline)
+  (flush))
 
 (defn make-batch-harness
   "Create a new batch harness suitable to run recursive tests. So one
   can specify tests, which themselves contain other tests."
   []
-  (let [our-plan     (ref :noplan)
-        current-test (ref 1)
-        failed-test  (ref false)
-        diagnostics  (ref "")]
-    (proxy [IHarness] []
-      (plan
-        [count]
-        (dosync (ref-set our-plan count)))
+  (hash-map :type         ::Batch
+            :our-plan     (ref :noplan)
+            :current-test (ref 1)
+            :failed-test  (ref false)
+            :diagnostics  (ref "")))
 
-      (diag
-        [msg]
-        (dosync (commute diagnostics #(str %1 \newline %2) msg)))
+(defmethod plan ::Batch
+  [cnt]
+  (dosync (ref-set (*the-harness* :our-plan) cnt)))
 
-      (bailOut
-        [msg]
-        (dosync (commute diagnostics #(str %1 "Bailing out!"
-                                           (when msg (str " " msg)))))
-        (throw (new FatalTestError)))
+(defmethod diag ::Batch
+  [msg]
+  (dosync (commute (*the-harness* :diagnostics) #(str %1 \newline %2) msg)))
 
-      (reportResult
-        [m t desc]
-        (when-not t
-          (dosync (ref-set failed-test true)))
-        (dosync (alter current-test inc)))
+(defmethod bail-out ::Batch
+  [msg]
+  (dosync (commute (*the-harness* :diagnostics)
+                   #(str %1 "Bailing out!" (when msg (str " " msg)))))
+  (throw (FatalTestError.)))
 
-      (getResult
-        []
-        (and (or (= @our-plan :noplan)
-                 (= @our-plan (dec @current-test)))
-             (not @failed-test)))
+(defmethod report-result ::Batch
+  [m t desc]
+  (when-not t
+    (dosync (ref-set (*the-harness* :failed-test) true)))
+  (dosync (commute (*the-harness* :current-test) inc)))
 
-      (getDiagnostics
-        []
-        @diagnostics))))
+(defmethod get-result ::Batch
+  []
+  (dosync
+    (and (or (= (deref (*the-harness* :our-plan)) :noplan)
+             (= (deref (*the-harness* :our-plan))
+                (deref (*the-harness* :current-test))))
+         (not (deref (*the-harness* :failed-test))))))
+
+(defmethod get-diagnostics ::Batch
+  []
+  (deref (*the-harness* :diagnostics)))
 
 (defvar *the-harness*
   (make-standard-harness)
-  "The handlers. This actually implements the TAP protocol itself, but may be
+  "The harness. This actually implements the TAP protocol itself, but may be
   re-bound via binding to enable different behaviour.")
 
 (defn with-harness*
+  "Bind the harness to the given one for the execution of thunk. Returns
+  the harness afterwards."
   [harness thunk]
   (binding [*the-harness* harness]
     (thunk)
     harness))
 
 (defmacro with-harness
+  "Binds the harness to the given one for the execution of the body.
+  Return the harness afterwards."
   [harness & body]
   `(with-harness* ~harness (fn [] ~@body)))
