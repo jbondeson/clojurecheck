@@ -47,7 +47,7 @@ EOF
 $2
 EOF
 
-	java clojure.lang.Script $in >$out
+	java clojure.main $in >$out
 	cmp -s $exp $out
 	print_result $? "$3"
 }
