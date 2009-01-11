@@ -15,7 +15,7 @@
 		<fileset dir="${clojure.lib}" includes="**/*.jar"/>
 	</path>
 
-	<target name="init">
+	<target name="init" depends="clean">
 		<tstamp/>
 		<mkdir dir="${build}"/>
 	</target>
