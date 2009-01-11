@@ -104,16 +104,16 @@
   (dosync (commute (*the-harness* :current-test) inc)))
 
 (defmethod get-result ::Batch
-  []
+  [harness]
   (dosync
-    (and (or (= (deref (*the-harness* :our-plan)) :noplan)
-             (= (deref (*the-harness* :our-plan))
-                (deref (*the-harness* :current-test))))
-         (not (deref (*the-harness* :failed-test))))))
+    (and (or (= (deref (harness :our-plan)) :noplan)
+             (= (deref (harness :our-plan))
+                (deref (harness :current-test))))
+         (not (deref (harness :failed-test))))))
 
 (defmethod get-diagnostics ::Batch
-  []
-  (deref (*the-harness* :diagnostics)))
+  [harness]
+  (deref (harness :diagnostics)))
 
 (defvar *the-harness*
   (make-standard-harness)

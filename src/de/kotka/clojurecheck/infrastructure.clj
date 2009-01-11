@@ -83,20 +83,20 @@
   harness-dispatch)
 
 (defmulti
-  #^{:arglists '([])
+  #^{:arglists '([harness])
      :doc
-  "Retrieve the result of the tests run in the current harness. This
+  "Retrieve the result of the tests run in the given harness. This
   is not implemented for all harnesses."}
   get-result
-  harness-dispatch)
+  #(% :type))
 
 (defmulti
-  #^{:arglists '([])
+  #^{:arglists '([harness])
      :doc
-  "Retrieve the diagnostics of the tests run in the current harness.
+  "Retrieve the diagnostics of the tests run in the given harness.
   This is not implemented for all harnesses."}
   get-diagnostics
-  harness-dispatch)
+  #(% :type))
 
 (defn test-driver
   "Driver function for the tests. This function should only be called, when
