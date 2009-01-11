@@ -99,7 +99,7 @@
 
 (defmethod report-result ::Batch
   [m t desc]
-  (when-not t
+  (when (and (not t) (not= m :todo))
     (dosync (ref-set (*the-harness* :failed-test) true)))
   (dosync (commute (*the-harness* :current-test) inc)))
 
