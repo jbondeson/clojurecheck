@@ -263,3 +263,105 @@
   [f gen]
   (let [f (if (fn? f) f (constantly f))]
     (comp gen f)))
+
+(def ^{:doc "Number of trials a property is tested with generated input.
+  Default is 1000."
+       :added "1.0"}
+  *trials*
+  1000)
+
+(defn *size-scale*
+  "The scale function used to scale up the size guidance with increasing
+  trials while testing a property with generated input."
+  {:added "1.0"}
+  [n]
+  (if (even? n)
+    (/ n 2)
+    (/ (inc n) 2)))
+
+(defn property*
+  "The property* driver handles the work when testing a property. It
+  expects:
+    * a descriptive message for failure reporting
+    * a list of locals (also for reporting)
+    * a generator which takes the scaled size and returns the input
+      for the property
+    * the property test in form of a function of the generated
+      input."
+  {:added "1.0"}
+  [msg locals gen prop]
+  (let [results   (atom [])
+        report-fn #(swap! results conj %)]
+    (loop [n 1]
+      (reset! results [])
+      (if (< *trials* n)
+        (report {:type :pass})
+        (let [input (-> n *size-scale* gen)]
+          (try
+            (binding [report report-fn]
+              (prop input))
+            (let [failures (filter #(-> % :type (not= :pass)) @results)]
+              (if (seq failures)
+                (report {:type     ::property-fail
+                         :message  msg
+                         :locals   locals
+                         :input    input
+                         :attempts n
+                         :failures failures})
+                (recur (inc n))))
+            (catch Throwable t
+              (report {:type    ::property-error
+                       :message msg
+                       :locals  locals
+                       :input   input
+                       :attempt n
+                       :error   t}))))))))
+
+(defmacro property
+  "Defines a property consisting of a binding vector as for let-gen
+  which associates locals with the given generators. When testing the
+  property the locals will be assigned the values generated.
+
+  The body is a normal deftest body."
+  {:added "1.0"}
+  [msg bindings & body]
+  (let [locals (remove keyword? (take-nth 2 bindings))]
+    `(property* ~msg
+                (quote ~locals)
+                (let-gen ~bindings [~@locals])
+                (fn [[~@locals]] ~@body))))
+
+(defmethod report ::property-fail
+  [{:keys [message locals input attempts failures]}]
+  (with-test-out
+    (inc-report-counter :fail)
+    (println "\nFAIL in" (testing-vars-str))
+    (when (seq *testing-contexts*) (println (testing-contexts-str)))
+    (println "falsified" (if message (str "'" message "'") "property")
+             "in" attempts "attempts")
+    (println "inputs where:")
+    (doseq [[local value] (map vector locals input)]
+      (println " " local "=" (pr-str value)))
+    (println "failed assertions where:")
+    (doseq [fail failures]
+      (println "  expected:" (pr-str (:expected fail)))
+      (print "    actual: ")
+      (let [actual (:actual fail)]
+        (if (instance? Throwable actual)
+          (clojure.stacktrace/print-cause-trace actual *stack-trace-depth*)
+          (prn actual))))))
+
+(defmethod report ::property-error
+  [{:keys [message locals input attempt error]}]
+  (with-test-out
+    (inc-report-counter :error)
+    (println "\nERROR in" (testing-vars-str))
+    (when (seq *testing-contexts*) (println (testing-contexts-str)))
+    (println (if message message "property") (str "(in attempt " attempt))
+    (println "inputs where:")
+    (doseq [[local value] (map vector locals input)]
+      (println " " local "=" (pr-str value)))
+    (println "error was:")
+    (if (instance? Throwable error)
+      (clojure.stacktrace/print-cause-trace error *stack-trace-depth*)
+      (prn error))))
