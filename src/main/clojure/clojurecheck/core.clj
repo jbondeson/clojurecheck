@@ -103,3 +103,19 @@
   bool
   (fn [size]
     (< (rand) 0.5)))
+
+(defn frequency
+  "Chooses one of the given generators based on the associated
+  weights. The size guidance is passed verbatim to the chosen
+  generator."
+  {:added "1.0"}
+  [choices]
+  (let [freqs   (reductions + (vals choices))
+        total   (last freqs)
+        freqs   (map #(-> % (/ total) clojure.core/float) freqs)
+        choices (map vector (keys choices) freqs)
+        choose  (fn []
+                  (let [dice (rand)]
+                    (some (fn [[c f]] (when (< f dice) c)) choices)))]
+    (fn [size]
+      ((choose) size))))
