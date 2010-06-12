@@ -1,0 +1,25 @@
+buildscript {
+    repositories {
+        flatDir name: 'gradleHome',
+                dirs: System.getenv('GRADLE_HOME') + '/lib/plugins'
+    }
+    dependencies {
+        classpath 'clojuresque:clojuresque:1.4.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'clojure'
+
+version = '2.0.0-SNAPSHOT'
+group = 'clojurecheck'
+
+clojureSnapshotsRepo repositories
+gradleHomeRepo repositories
+
+dependencies {
+    compile 'org.clojure:clojure:1.2.0-master-SNAPSHOT'
+
+    development 'vimclojure:vimclojure:2.2.0-SNAPSHOT'
+}
+
+configureClojarsDeploy uploadArchives
