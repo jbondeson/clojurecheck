@@ -134,3 +134,59 @@
   {:added "1.0"}
   [choices]
   (one-of (map constantly choices)))
+
+(def ^{:doc "Number of maximum retries to generate a valid value."
+       :added "1.0"}
+  *retries*
+  2000)
+
+(defmacro let-gen
+  "Takes a vector of let-like bindings. let-gen returns itself
+  a generator. When called it evaluates the generators on the
+  right hand side and assigns the result to the corresponding
+  local. Later generator definitions may refer to previous locals
+  as in a usual let.
+
+  Similar to for and doseq you can intersperse the bindings with
+  directives, which modify the behaviour.
+
+    * :when (pred? ...):
+      In case the predicate evaluates to false the generation
+      process is cancelled and retried.
+    * :let [...]:
+      Takes a normal let-style binding and makes the bindings
+      available to the following generator definitions."
+  {:added "1.0"}
+  [bindings & body]
+  (@#'clojure.core/assert-args let-gen
+       (vector? bindings)       "a vector for its bindings"
+       (even? (count bindings)) "an even number of forms in the bindings vector")
+  (let [size   (gensym "size__")
+        emit-g (fn [[local gen] body]
+                 `(let ~[local (clojure.core/list gen size)]
+                    ~body))
+        emit-p (fn [pred body]
+                 `(if ~pred
+                    ~body
+                    [:retry]))
+        emit-l (fn [bindings body]
+                 `(let ~bindings
+                    ~body))]
+    `(fn [~size]
+       (loop [n# *retries*]
+         (if-not (zero? n#)
+           (let [[result# value#]
+                 ~(reduce
+                    (fn [body [v t :as bs]]
+                      (case t
+                        :when (emit-p v body)
+                        :let  (emit-l v body)
+                        (emit-g [t v] body)))
+                    `[:value (do ~@body)]
+                    (partition 2 (rseq bindings)))]
+             (if (= result# :retry)
+               (recur (dec n#))
+               value#))
+           (throw
+             (Exception.
+               (str "Retries exhausted (" *retries* " attempts)"))))))))
