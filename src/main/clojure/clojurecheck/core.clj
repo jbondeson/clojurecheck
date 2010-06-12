@@ -119,3 +119,10 @@
                     (some (fn [[c f]] (when (< f dice) c)) choices)))]
     (fn [size]
       ((choose) size))))
+
+(defn one-of
+  "Chooses one of the given generators with equal probability.
+  The size guidance is passed verbatim to the chosen generator."
+  {:added "1.0"}
+  [choices]
+  (frequency (zipmap choices (repeat 1))))
