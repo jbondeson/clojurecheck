@@ -72,7 +72,8 @@
     1 failures, 0 errors.
     {:type :summary, :test 2, :pass 6, :fail 1, :error 0}"}
   clojurecheck.core
-  (:refer-clojure :exclude (int float))
+  (:refer-clojure
+    :exclude (int float list vec set sorted-set hash-map sorted-map))
   (:use clojure.test))
 
 (defn- gen-number
@@ -190,3 +191,67 @@
            (throw
              (Exception.
                (str "Retries exhausted (" *retries* " attempts)"))))))))
+
+(defn list
+  "Generates a list based on the given generator. The length of
+  the list is an integer generator. The default grows with the
+  size guidance. The size guidance is passed verbatim to the
+  item generator."
+  {:added "1.0"}
+  [item & {:keys [length] :or {length (int)}}]
+  (fn [size]
+    (take (length size) (repeatedly #(item size)))))
+
+(defn vec
+  "Generates a vector based on the given generator. The length of
+  the vector is an integer generator. The default grows with the
+  size guidance. The size guidance is passed verbatim to the item
+  generator."
+  {:added "1.0"}
+  [item & {:keys [length] :or {length (int)}}]
+  (let-gen [elems (list item :length length)]
+    (clojure.core/vec elems)))
+
+(defn set
+  "Generates a set based on the given generator. The size of
+  the set is an integer generator. The default grows with the
+  size guidance. The size guidance is passed verbatim to the
+  item generator."
+  {:added "1.0"}
+  [item & {:keys [length] :or {length (int)}}]
+  (let-gen [elems (list item :length length)]
+    (clojure.core/set elems)))
+
+(defn sorted-set
+  "Generates a sorted-set based on the given generator. The size of
+  the sorted-set is an integer generator. The default grows with the
+  size guidance. The size guidance is passed verbatim to the item
+  generator."
+  {:added "1.0"}
+  [item & {:keys [length] :or {length (int)}}]
+  (let-gen [elems (list item :length length)]
+    (apply clojure.core/sorted-set elems)))
+
+(defn hash-map
+  "Generates a hash-map based on the given generators. The size of
+  the hash-map is an integer generator. The default grows with the
+  size guidance. The size guidance is passed verbatim to the key
+  and value generators."
+  {:added "1.0"}
+  [keys vals & {:keys [length] :or {length (int)}}]
+  (let-gen [len length
+            ks  (list keys :length (constantly len))
+            vs  (list vals :length (constantly len))]
+    (zipmap ks vs)))
+
+(defn sorted-map
+  "Generates a sorted-map based on the given generators. The size of
+  the sorted-map is an integer generator. The default grows with the
+  size guidance. The size guidance is passed verbatim to the key and
+  value generators."
+  {:added "1.0"}
+  [keys vals & {:keys [length] :or {length (int)}}]
+  (let-gen [len length
+            ks  (list keys :length (constantly len))
+            vs  (list vals :length (constantly len))]
+    (apply clojure.core/sorted-map (interleave ks vs))))
