@@ -126,3 +126,11 @@
   {:added "1.0"}
   [choices]
   (frequency (zipmap choices (repeat 1))))
+
+(defn element
+  "Choose one of the given elements with equal probability.
+  Since the elements are \"constant\" generators the size
+  guidance is ignored."
+  {:added "1.0"}
+  [choices]
+  (one-of (map constantly choices)))
