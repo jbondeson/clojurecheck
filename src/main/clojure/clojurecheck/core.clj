@@ -255,3 +255,11 @@
             ks  (list keys :length (constantly len))
             vs  (list vals :length (constantly len))]
     (apply clojure.core/sorted-map (interleave ks vs))))
+
+(defn sized
+  "Modify the size guidance according to f and pass it on to the
+  given generator. If f is not a function it will be taken"
+  {:added "1.0"}
+  [f gen]
+  (let [f (if (fn? f) f (constantly f))]
+    (comp gen f)))
