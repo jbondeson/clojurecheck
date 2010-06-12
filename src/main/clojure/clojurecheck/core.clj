@@ -72,4 +72,28 @@
     1 failures, 0 errors.
     {:type :summary, :test 2, :pass 6, :fail 1, :error 0}"}
   clojurecheck.core
+  (:refer-clojure :exclude (int float))
   (:use clojure.test))
+
+(defn- gen-number
+  [random lower upper size]
+  (let [[low high] (if size
+                     [(max (- size) lower) (min size upper)]
+                     [lower upper])]
+    (+ low (random (- high low)))))
+
+(defn int
+  "Generates a random integral number between lower and upper.
+  The interval is limited by the size guidance."
+  {:added "1.0"}
+  [& {:keys [lower upper] :or {lower -32768 upper 32767}}]
+  (fn [size]
+    (gen-number rand-int lower upper size)))
+
+(defn float
+  "Generates a random floating point number between lower and upper.
+  The interval is limited by the size guidance."
+  {:added "1.0"}
+  [& {:keys [lower upper] :or {lower -32768.0 upper 32767.0}}]
+  (fn [size]
+    (gen-number rand lower upper size)))
