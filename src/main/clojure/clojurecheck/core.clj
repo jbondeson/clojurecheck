@@ -97,3 +97,9 @@
   [& {:keys [lower upper] :or {lower -32768.0 upper 32767.0}}]
   (fn [size]
     (gen-number rand lower upper size)))
+
+(def ^{:doc "Generates a random boolean value. Ignores the size guidance"
+       :added "1.0"}
+  bool
+  (fn [size]
+    (< (rand) 0.5)))
