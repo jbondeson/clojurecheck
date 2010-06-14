@@ -86,7 +86,7 @@
 (defn int
   "Generates a random integral number between lower and upper.
   The interval is limited by the size guidance."
-  {:added "1.0"}
+  {:added "2.0"}
   [& {:keys [lower upper] :or {lower -32768 upper 32767}}]
   (fn [size]
     (gen-number rand-int lower upper size)))
@@ -94,13 +94,13 @@
 (defn float
   "Generates a random floating point number between lower and upper.
   The interval is limited by the size guidance."
-  {:added "1.0"}
+  {:added "2.0"}
   [& {:keys [lower upper] :or {lower -32768.0 upper 32767.0}}]
   (fn [size]
     (gen-number rand lower upper size)))
 
 (def ^{:doc "Generates a random boolean value. Ignores the size guidance"
-       :added "1.0"}
+       :added "2.0"}
   bool
   (fn [size]
     (< (rand) 0.5)))
@@ -109,7 +109,7 @@
   "Chooses one of the given generators based on the associated
   weights. The size guidance is passed verbatim to the chosen
   generator."
-  {:added "1.0"}
+  {:added "2.0"}
   [choices]
   (let [freqs   (reductions + (vals choices))
         total   (last freqs)
@@ -124,7 +124,7 @@
 (defn one-of
   "Chooses one of the given generators with equal probability.
   The size guidance is passed verbatim to the chosen generator."
-  {:added "1.0"}
+  {:added "2.0"}
   [choices]
   (frequency (zipmap choices (repeat 1))))
 
@@ -132,12 +132,12 @@
   "Choose one of the given elements with equal probability.
   Since the elements are \"constant\" generators the size
   guidance is ignored."
-  {:added "1.0"}
+  {:added "2.0"}
   [choices]
   (one-of (map constantly choices)))
 
 (def ^{:doc "Number of maximum retries to generate a valid value."
-       :added "1.0"}
+       :added "2.0"}
   *retries*
   2000)
 
@@ -157,7 +157,7 @@
     * :let [...]:
       Takes a normal let-style binding and makes the bindings
       available to the following generator definitions."
-  {:added "1.0"}
+  {:added "2.0"}
   [bindings & body]
   (@#'clojure.core/assert-args let-gen
        (vector? bindings)       "a vector for its bindings"
@@ -197,7 +197,7 @@
   the list is an integer generator. The default grows with the
   size guidance. The size guidance is passed verbatim to the
   item generator."
-  {:added "1.0"}
+  {:added "2.0"}
   [item & {:keys [length] :or {length (int)}}]
   (fn [size]
     (take (length size) (repeatedly #(item size)))))
@@ -207,7 +207,7 @@
   the vector is an integer generator. The default grows with the
   size guidance. The size guidance is passed verbatim to the item
   generator."
-  {:added "1.0"}
+  {:added "2.0"}
   [item & {:keys [length] :or {length (int)}}]
   (let-gen [elems (list item :length length)]
     (clojure.core/vec elems)))
@@ -217,7 +217,7 @@
   the set is an integer generator. The default grows with the
   size guidance. The size guidance is passed verbatim to the
   item generator."
-  {:added "1.0"}
+  {:added "2.0"}
   [item & {:keys [length] :or {length (int)}}]
   (let-gen [elems (list item :length length)]
     (clojure.core/set elems)))
@@ -227,7 +227,7 @@
   the sorted-set is an integer generator. The default grows with the
   size guidance. The size guidance is passed verbatim to the item
   generator."
-  {:added "1.0"}
+  {:added "2.0"}
   [item & {:keys [length] :or {length (int)}}]
   (let-gen [elems (list item :length length)]
     (apply clojure.core/sorted-set elems)))
@@ -237,7 +237,7 @@
   the hash-map is an integer generator. The default grows with the
   size guidance. The size guidance is passed verbatim to the key
   and value generators."
-  {:added "1.0"}
+  {:added "2.0"}
   [keys vals & {:keys [length] :or {length (int)}}]
   (let-gen [len length
             ks  (list keys :length (constantly len))
@@ -249,7 +249,7 @@
   the sorted-map is an integer generator. The default grows with the
   size guidance. The size guidance is passed verbatim to the key and
   value generators."
-  {:added "1.0"}
+  {:added "2.0"}
   [keys vals & {:keys [length] :or {length (int)}}]
   (let-gen [len length
             ks  (list keys :length (constantly len))
@@ -259,21 +259,21 @@
 (defn sized
   "Modify the size guidance according to f and pass it on to the
   given generator. If f is not a function it will be taken"
-  {:added "1.0"}
+  {:added "2.0"}
   [f gen]
   (let [f (if (fn? f) f (constantly f))]
     (comp gen f)))
 
 (def ^{:doc "Number of trials a property is tested with generated input.
   Default is 1000."
-       :added "1.0"}
+       :added "2.0"}
   *trials*
   1000)
 
 (defn *size-scale*
   "The scale function used to scale up the size guidance with increasing
   trials while testing a property with generated input."
-  {:added "1.0"}
+  {:added "2.0"}
   [n]
   (if (even? n)
     (/ n 2)
@@ -288,7 +288,7 @@
       for the property
     * the property test in form of a function of the generated
       input."
-  {:added "1.0"}
+  {:added "2.0"}
   [msg locals gen prop]
   (let [results   (atom [])
         report-fn #(swap! results conj %)]
@@ -323,7 +323,7 @@
   property the locals will be assigned the values generated.
 
   The body is a normal deftest body."
-  {:added "1.0"}
+  {:added "2.0"}
   [msg bindings & body]
   (let [locals (remove keyword? (take-nth 2 bindings))]
     `(property* ~msg
