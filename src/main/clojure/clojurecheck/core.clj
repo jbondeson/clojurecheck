@@ -201,6 +201,16 @@
        (fn [size#]
          (generate generator# size#)))))
 
+(defn guard
+  "Guard the given generator with the predicate. Each generated value is
+  fed to the predicate. In case it returns false the run is retried. If
+  the retry count runs out the whole test run is cancelled via an
+  Exception."
+  {:added "2.1"}
+  [pred generator]
+  (fn [size]
+    (generate #(let [v (generator %)] (if (pred v) [:value v] [:retry])) size)))
+
 (defn list
   "Generates a list based on the given generator. The length of
   the list is an integer generator. The default grows with the
