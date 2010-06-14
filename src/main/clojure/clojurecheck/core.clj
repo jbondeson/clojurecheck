@@ -35,7 +35,7 @@
 
     (defn angular-diff
       [a b]
-      (-> (- a b) (mod 180) Math/abs))
+      (-> (- a b) Math/abs (mod 180)))
 
     (deftest angular-diff-standard-test
       (are [x y] (= x y)
@@ -48,25 +48,25 @@
 
     (deftest angular-diff-property
       (cc/property „angular-diff is smallest angel between a and b“
-        [diff (cc/float :lower -180.0 :upper 180.0)
-         a    (cc/float :lower 0.0 :upper 360.0)
-         n    (cc/int)]
+        [a    (cc/int)
+         n    (cc/int)
+         diff (cc/int :lower -180 :upper 180)]
         (let [b (+ a (* 360 n) diff)]
           (is (= (angular-diff a b) (Math/abs diff))))))
 
   And a result:
-    user=> (run-tests)
+    my.package=> (run-tests)
     Testing my.package
 
-    FAIL in (angular-diff-property) (core.clj:288)
-    falsified angular-diff is smallest angel between a and b in 3 attempts
+    FAIL in (angular-diff-property) (core.clj:305)
+    falsified 'angular-diff is smallest angel between a and b' in 5 attempts
     inputs where:
-      diff = 1.3374370509881066
-      a = 0.5071098240831757
-      n = -1
+      a = -2
+      n = 1
+      diff = -3
     failed assertions where:
       expected: (= (angular-diff a b) (Math/abs diff))
-        actual: (not (= 178.66256294901189 1.3374370509881066))
+        actual: (not (= 177 3))
 
     Ran 2 tests containing 7 assertions.
     1 failures, 0 errors.
