@@ -23,3 +23,21 @@ dependencies {
 }
 
 configureClojarsDeploy uploadArchives
+
+task runNailgun(dependsOn: classes) << {
+    Map args = [
+        classname:    'com.martiansoftware.nailgun.NGServer',
+        failOnError:  true,
+        fork:         true,
+        classpathref: 'nailgun.classpath'
+    ]
+
+    ant.path(id: 'nailgun.classpath') {
+        sourceSets.main.clojure.srcDirs.each { pathelement location: it }
+        pathelement location: sourceSets.main.classesDir.path
+        configurations.compile.each { pathelement location: it }
+        configurations.development.each { pathelement location: it }
+    }
+
+    ant.java(args) { arg value: '127.0.0.1' }
+}
