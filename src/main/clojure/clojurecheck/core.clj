@@ -141,6 +141,22 @@
   *retries*
   2000)
 
+(defn generate
+  "Takes a spinning generator and runs it until it returns a value
+  or the retry count is exceeded. A spinning generator indicates
+  a value by returning a vector consisting of the keyword :value
+  and the actual value. It indicates the request for a retry by
+  returning a vector containing the keyword :retry."
+  {:added "2.1"}
+  [generator size]
+  (loop [n *retries*]
+    (if-not (zero? n)
+      (let [[result value] (generator size)]
+        (if (= result :retry)
+          (recur (dec n))
+          value))
+      (throw (Exception. (str "Retries exhausted (" *retries* " attempts)"))))))
+
 (defmacro let-gen
   "Takes a vector of let-like bindings. let-gen returns itself
   a generator. When called it evaluates the generators on the
@@ -173,24 +189,17 @@
         emit-l (fn [bindings body]
                  `(let ~bindings
                     ~body))]
-    `(fn [~size]
-       (loop [n# *retries*]
-         (if-not (zero? n#)
-           (let [[result# value#]
-                 ~(reduce
-                    (fn [body [v t :as bs]]
-                      (case t
-                        :when (emit-p v body)
-                        :let  (emit-l v body)
-                        (emit-g [t v] body)))
-                    `[:value (do ~@body)]
-                    (partition 2 (rseq bindings)))]
-             (if (= result# :retry)
-               (recur (dec n#))
-               value#))
-           (throw
-             (Exception.
-               (str "Retries exhausted (" *retries* " attempts)"))))))))
+    `(let [generator# (fn [~size]
+                        ~(reduce
+                           (fn [body [v t :as bs]]
+                             (case t
+                               :when (emit-p v body)
+                               :let  (emit-l v body)
+                               (emit-g [t v] body)))
+                           `[:value (do ~@body)]
+                           (partition 2 (rseq bindings))))]
+       (fn [size#]
+         (generate generator# size#)))))
 
 (defn list
   "Generates a list based on the given generator. The length of
