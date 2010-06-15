@@ -10,7 +10,7 @@ buildscript {
 
 apply plugin: 'clojure'
 
-version = '2.0.1-SNAPSHOT'
+version = '2.0.1'
 group = 'clojurecheck'
 
 clojureSnapshotsRepo repositories
