@@ -117,7 +117,8 @@
         choices (map vector (keys choices) freqs)
         choose  (fn []
                   (let [dice (rand)]
-                    (some (fn [[c f]] (when (< f dice) c)) choices)))]
+                    ; XXX: c cannot be nil, because it is a generator.
+                    (some (fn [[c f]] (when (< dice f) c)) choices)))]
     (fn [size]
       ((choose) size))))
 
