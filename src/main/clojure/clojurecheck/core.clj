@@ -259,7 +259,8 @@
 
 (defn sized
   "Modify the size guidance according to f and pass it on to the
-  given generator. If f is not a function it will be taken"
+  given generator. If f is not a function it will be taken turned
+  into a function returning the given value as constant."
   {:added "1.0"}
   [f gen]
   (let [f (if (fn? f) f (constantly f))]
