@@ -276,6 +276,16 @@
             vs  (list vals :length (constantly len))]
     (apply clojure.core/sorted-map (interleave ks vs))))
 
+(defn string
+  "Generates a string taking characters from the given generator. The
+  length of the string is an integer generator. The default grows with
+  the size guidance. The size guidance is passed verbatim to the
+  character generator."
+  {:added "2.1"}
+  [characters & {:keys [length] :or {length (int)}}]
+  (let-gen [chs (list characters :length length)]
+    (apply str chs)))
+
 (defn sized
   "Modify the size guidance according to f and pass it on to the
   given generator. If f is not a function it will be taken turned
