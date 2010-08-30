@@ -333,20 +333,20 @@
               (prop input))
             (let [failures (filter #(-> % :type (not= :pass)) @results)]
               (if (seq failures)
-                (report {:type     ::property-fail
-                         :message  msg
-                         :locals   locals
-                         :input    input
-                         :attempts n
-                         :failures failures})
+                (do-report {:type     ::property-fail
+                            :message  msg
+                            :locals   locals
+                            :input    input
+                            :attempts n
+                            :failures failures})
                 (recur (inc n))))
             (catch Throwable t
-              (report {:type    ::property-error
-                       :message msg
-                       :locals  locals
-                       :input   input
-                       :attempt n
-                       :error   t}))))))))
+              (do-report {:type    ::property-error
+                          :message msg
+                          :locals  locals
+                          :input   input
+                          :attempt n
+                          :error   t}))))))))
 
 (defmacro property
   "Defines a property consisting of a binding vector as for let-gen
@@ -363,10 +363,10 @@
                 (fn [[~@locals]] ~@body))))
 
 (defmethod report ::property-fail
-  [{:keys [message locals input attempts failures]}]
+  [{:keys [message locals input attempts failures] :as this}]
   (with-test-out
     (inc-report-counter :fail)
-    (println "\nFAIL in" (testing-vars-str))
+    (println "\nFAIL in" (testing-vars-str this))
     (when (seq *testing-contexts*) (println (testing-contexts-str)))
     (println "falsified" (if message (str "'" message "'") "property")
              "in" attempts "attempts")
@@ -383,10 +383,10 @@
           (prn actual))))))
 
 (defmethod report ::property-error
-  [{:keys [message locals input attempt error]}]
+  [{:keys [message locals input attempt error] :as this}]
   (with-test-out
     (inc-report-counter :error)
-    (println "\nERROR in" (testing-vars-str))
+    (println "\nERROR in" (testing-vars-str this))
     (when (seq *testing-contexts*) (println (testing-contexts-str)))
     (println (if message message "property") (str "(in attempt " attempt))
     (println "inputs where:")
