@@ -101,6 +101,15 @@
                   [[] []] this)]
       (DomainValue. generators values)))
 
+  clojure.lang.IPersistentMap
+  (arbitrary
+    [this size]
+    (let [ks    (keys this)
+          gens  (vals this)
+          dvals (arbitrary gens size)]
+      (DomainValue. (zipmap ks (.domain dvals))
+                    (zipmap ks (.value dvals)))))
+
   Object
   (arbitrary [this size] (arbitrary (constantly this) size)))
 
