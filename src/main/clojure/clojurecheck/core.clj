@@ -99,7 +99,10 @@
                       [(conj generators (.domain dval))
                        (conj values (.value dval))]))
                   [[] []] this)]
-      (DomainValue. generators values))))
+      (DomainValue. generators values)))
+
+  Object
+  (arbitrary [this size] (arbitrary (constantly this) size)))
 
 (deftype NumberDomain
   [random lower upper]
