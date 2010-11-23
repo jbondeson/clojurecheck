@@ -76,34 +76,61 @@
     :exclude (int float list vec set sorted-set hash-map sorted-map))
   (:use clojure.test))
 
-(defn- gen-number
-  [random lower upper size]
-  (let [[low high] (if size
-                     [(max (- size) lower) (min size upper)]
-                     [lower upper])]
-    (+ low (random (- high low)))))
+(defprotocol Generator
+  (^{:added "2.1"} arbitrary
+    [generator size]
+    "Choose an arbitrary value by virtue of the given generator."))
+
+(deftype DomainValue [domain value])
+
+(extend-protocol Generator
+  clojure.lang.Fn
+  (arbitrary [this size] (DomainValue. this (this size)))
+
+  clojure.lang.PersistentVector
+  (arbitrary [this size] (arbitrary (seq this) size))
+
+  clojure.lang.ISeq
+  (arbitrary
+    [this size]
+    (let [[generators values]
+          (reduce (fn [[generators values] gen]
+                    (let [dval (arbitrary gen size)]
+                      [(conj generators (.domain dval))
+                       (conj values (.value dval))]))
+                  [[] []] this)]
+      (DomainValue. generators values))))
+
+(deftype NumberDomain
+  [random lower upper]
+  Generator
+  (arbitrary
+    [this size]
+    (let [[low high] (if size
+                       [(max (- size) lower) (min size upper)]
+                       [lower upper])]
+      (DomainValue. this (+ low (random (- high low)))))))
 
 (defn int
   "Generates a random integral number between lower and upper.
   The interval is limited by the size guidance."
   {:added "2.0"}
   [& {:keys [lower upper] :or {lower -32768 upper 32767}}]
-  (fn [size]
-    (gen-number rand-int lower upper size)))
+  (NumberDomain. rand-int lower upper))
 
 (defn float
   "Generates a random floating point number between lower and upper.
   The interval is limited by the size guidance."
   {:added "2.0"}
   [& {:keys [lower upper] :or {lower -32768.0 upper 32767.0}}]
-  (fn [size]
-    (gen-number rand lower upper size)))
+  (NumberDomain. rand lower upper))
 
 (def ^{:doc "Generates a random boolean value. Ignores the size guidance"
        :added "2.0"}
   bool
-  (fn [size]
-    (< (rand) 0.5)))
+  (reify
+    Generator
+    (arbitrary [this _size] (DomainValue. this (< (rand) 0.5)))))
 
 (defn frequency
   "Chooses one of the given generators based on the associated
@@ -119,8 +146,9 @@
                   (let [dice (rand)]
                     ; XXX: c cannot be nil, because it is a generator.
                     (some (fn [[c f]] (when (< dice f) c)) choices)))]
-    (fn [size]
-      ((choose) size))))
+    (reify
+      Generator
+      (arbitrary [this size] (arbitrary (choose) size)))))
 
 (defn one-of
   "Chooses one of the given generators with equal probability.
@@ -137,26 +165,21 @@
   [choices]
   (one-of (map constantly choices)))
 
-(def ^{:doc "Number of maximum retries to generate a valid value."
-       :added "2.0"}
-  *retries*
-  2000)
-
-(defn generate
-  "Takes a spinning generator and runs it until it returns a value
-  or the retry count is exceeded. A spinning generator indicates
-  a value by returning a vector consisting of the keyword :value
-  and the actual value. It indicates the request for a retry by
-  returning a vector containing the keyword :retry."
+(defn guard
+  "Guard the given generator with the predicate. But note, that this
+  can be quite inefficient. It is better to generate only interesting
+  values in the first place."
   {:added "2.1"}
-  [generator size]
-  (loop [n *retries*]
-    (if-not (zero? n)
-      (let [[result value] (generator size)]
-        (if (= result :retry)
-          (recur (dec n))
-          value))
-      (throw (Exception. (str "Retries exhausted (" *retries* " attempts)"))))))
+  [generator pred]
+  (reify
+    Generator
+    (arbitrary
+      [this size]
+      (when-let [dom-value (arbitrary generator size)]
+        (when (pred (.value dom-value))
+          dom-value)))))
+
+(deftype BoundDomain [generators values])
 
 (defmacro let-gen
   "Takes a vector of let-like bindings. let-gen returns itself
@@ -175,42 +198,44 @@
       Takes a normal let-style binding and makes the bindings
       available to the following generator definitions."
   {:added "2.0"}
-  [bindings & body]
+  [bindings expr]
   (@#'clojure.core/assert-args let-gen
        (vector? bindings)       "a vector for its bindings"
        (even? (count bindings)) "an even number of forms in the bindings vector")
-  (let [size   (gensym "size__")
-        emit-g (fn [[local gen] body]
-                 `(let ~[local (clojure.core/list gen size)]
-                    ~body))
-        emit-p (fn [pred body]
-                 `(if ~pred
-                    ~body
-                    [:retry]))
-        emit-l (fn [bindings body]
-                 `(let ~bindings
-                    ~body))]
-    `(let [generator# (fn [~size]
-                        ~(reduce
-                           (fn [body [v t :as bs]]
-                             (case t
-                               :when (emit-p v body)
-                               :let  (emit-l v body)
-                               (emit-g [t v] body)))
-                           `[:value (do ~@body)]
-                           (partition 2 (rseq bindings))))]
-       (fn [size#]
-         (generate generator# size#)))))
-
-(defn guard
-  "Guard the given generator with the predicate. Each generated value is
-  fed to the predicate. In case it returns false the run is retried. If
-  the retry count runs out the whole test run is cancelled via an
-  Exception."
-  {:added "2.1"}
-  [pred generator]
-  (fn [size]
-    (generate #(let [v (generator %)] (if (pred v) [:value v] [:retry])) size)))
+  (let [size       (gensym "size__")
+        locals     (gensym "locals__")
+        generators (gensym "generators__")
+        values     (gensym "values__")
+        emit-g     (fn [[local gen] body]
+                     `(when-let [dval# (arbitrary ~gen ~size)]
+                        (let [~local      (.value dval#)
+                              ~generators (conj ~generators (.domain dval#))
+                              ~values     (conj ~values ~local)
+                              ~locals     (conj ~locals ~(keyword local))]
+                          ~body)))
+        emit-p     (fn [pred body]
+                     `(when ~pred
+                        ~body))
+        emit-l     (fn [bindings body]
+                     `(let ~bindings
+                        ~body))]
+    `(let [~locals     []
+           ~generators []
+           ~values     []]
+       (reify
+         Generator
+         (~'arbitrary
+           [this# ~size]
+             ~(reduce
+                (fn [body [v t :as bs]]
+                  (case t
+                    :when (emit-p v body)
+                    :let  (emit-l v body)
+                    (emit-g [t v] body)))
+                `(DomainValue. (BoundDomain. (zipmap ~locals ~generators)
+                                             (zipmap ~locals ~values))
+                               ~expr)
+                (partition 2 (rseq bindings))))))))
 
 (defn list
   "Generates a list based on the given generator. The length of
@@ -219,8 +244,9 @@
   item generator."
   {:added "2.0"}
   [item & {:keys [length] :or {length (int)}}]
-  (fn [size]
-    (take (length size) (repeatedly #(item size)))))
+  (let-gen [len      length
+            elements (repeat len item)]
+    elements))
 
 (defn vec
   "Generates a vector based on the given generator. The length of
@@ -293,13 +319,24 @@
   {:added "2.0"}
   [f gen]
   (let [f (if (fn? f) f (constantly f))]
-    (comp gen f)))
+    (reify Generator (arbitrary [this size] (arbitrary gen (f size))))))
 
 (def ^{:doc "Number of trials a property is tested with generated input.
   Default is 1000."
        :added "2.0"}
   *trials*
   1000)
+
+(defn generate-input
+  "Try *trials* times to generate a valid random input."
+  {:added "2.0"}
+  [gen size]
+  (loop [n *trials*]
+    (if (pos? n)
+      (if-let [dval (arbitrary gen size)]
+        dval
+        (recur (dec n)))
+      (throw (Exception. "trials exhausted while generating input")))))
 
 (defn *size-scale*
   "The scale function used to scale up the size guidance with increasing
@@ -327,16 +364,16 @@
       (reset! results [])
       (if (< *trials* n)
         (report {:type :pass})
-        (let [input (-> n *size-scale* gen)]
+        (let [input (->> n *size-scale* (generate-input gen))]
           (try
             (binding [report report-fn]
-              (prop input))
+              (prop (.value input)))
             (let [failures (filter #(-> % :type (not= :pass)) @results)]
               (if (seq failures)
                 (do-report {:type     ::property-fail
                             :message  msg
                             :locals   locals
-                            :input    input
+                            :input    (.value input)
                             :attempts n
                             :failures failures})
                 (recur (inc n))))
@@ -344,7 +381,7 @@
               (do-report {:type    ::property-error
                           :message msg
                           :locals  locals
-                          :input   input
+                          :input   (.value input)
                           :attempt n
                           :error   t}))))))))
 
