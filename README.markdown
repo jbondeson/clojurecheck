@@ -1,3 +1,14 @@
+*Note:* This is a branch of the clojurecheck hg source
+ (http://bitbucket.org/kotarak/clojurecheck) that has been converted
+ into a git repository.
+   Changes:
+     * Update to clojure 1.3.0
+     * Converted to lein format
+     * Changed reporting to re-report with different messages rather
+       than throwing custom typed reports.  This is to allow it to
+       play nicely with clojure-test-mode
+     * Re-worked property* to simplify
+
 # ClojureCheck – Property based testing for Clojure
 
 *ClojureCheck* is an addon for `clojure.test`. It adds property based
